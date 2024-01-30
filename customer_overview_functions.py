@@ -90,23 +90,21 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
     return
 
 
-def customer_overview_data_function(rfm, invoices, invoices_lines):
+def merge_cltv_rfm(cltv_df, rfm):
+    return pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
+                    left_on='Customer_ID', right_on='Customer_ID', how='inner')
+
+
+def customer_overview_data_function(rfm, invoices, invoices_lines, show_full_dataframe=False):
     cltv_df = compute_lifetime_value(invoices, invoices_lines)
 
-    merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
-                         left_on='Customer_ID', right_on='Customer_ID', how='inner')
+    merged_df = merge_cltv_rfm(cltv_df, rfm)
 
-    customer_id = st.selectbox('', ((merged_df['Customer_ID'].astype(int)).astype(str) + ' - ' + merged_df['Customer_name']))
-    customer_id = int(customer_id.split(' - ')[0])
-    st.dataframe(merged_df[merged_df['Customer_ID'] == customer_id], use_container_width=True)    # st.dataframe(cltv_df[cltv_df.index == customer_id], use_container_width=True)
-    return
+    if show_full_dataframe:
+        st.dataframe(merged_df, use_container_width=True)
+    else:
+        customer_id = st.selectbox('Customer', ((merged_df['Customer_ID'].astype(int)).astype(str) + ' - ' + merged_df['Customer_name']))
+        customer_id = int(customer_id.split(' - ')[0])
+        st.dataframe(merged_df[merged_df['Customer_ID'] == customer_id], use_container_width=True)
 
-
-def customers_overview_data_function(rfm, invoices, invoices_lines):
-    cltv_df = compute_lifetime_value(invoices, invoices_lines)
-
-    merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
-                         left_on='Customer_ID', right_on='Customer_ID', how='inner')
-
-    st.dataframe(merged_df, use_container_width=True)
     return

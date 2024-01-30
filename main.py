@@ -14,7 +14,7 @@ from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data
 from utils.get_data import transform_data
 from customer_overview_functions import customer_overview_data_function
-from customer_overview_functions import customers_overview_data_function
+# from customer_overview_functions import customers_overview_data_function
 st.set_page_config(page_title="Customer Portrait", layout="wide")
 st.title(f"Customer Portrait")
 
@@ -67,15 +67,17 @@ if sales_filter == "***Invoice***":
                 st.dataframe(categories_tree(categories, products, directory), use_container_width=True)
 
         with customer_tab:
-            data_tab, overview_tab = st.tabs(["Data", "customer overview"])
+            overview_tab, data_tab = st.tabs(["Customer Overview", "Data"])
             with overview_tab:
                 customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoices, invoices_lines, customers, orders, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
             with data_tab:
                 customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
                 with customer_data_tab:
+                    # customer_overview_data_function(rfm, invoices, invoices_lines)
                     customer_overview_data_function(rfm, invoices, invoices_lines)
                 with customers_data_tab:
-                    customers_overview_data_function(rfm, invoices, invoices_lines)
+                    # customers_overview_data_function(rfm, invoices, invoices_lines)
+                    customer_overview_data_function(rfm, invoices, invoices_lines, show_full_dataframe=True)
 
     else:
         st.error("No data available for the selected time period !")

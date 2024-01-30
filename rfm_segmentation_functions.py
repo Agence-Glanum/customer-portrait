@@ -174,6 +174,7 @@ def show_customer_segment_distribution(rfm):
         icon="ℹ️")
 
     rfm['RFM score'] = rfm['R'].map(str) + rfm['F'].map(str) + rfm['M'].map(str)
+    rfm['RFM_count'] = rfm.groupby(['R', 'F', 'M'])['R'].transform('count')
 
     def label_rfm_segments(rfm_score):
         rfm_score = int(rfm_score)
@@ -197,6 +198,7 @@ def show_customer_segment_distribution(rfm):
             return 'Other'
 
     rfm['Segment 1'] = rfm.apply(lambda x: label_rfm_segments(x['RFM score']), axis=1)
+    rfm['size'] = np.ceil(rfm['RFM_count'] / 10) * 10
 
     st.subheader('Customer clustering based on R, F and M')
 
@@ -209,11 +211,14 @@ def show_customer_segment_distribution(rfm):
         'Other': 'gray'
     }
 
-    fig = px.scatter_3d(rfm, x='R', y='F', z='M', color='Segment 1', color_discrete_map=colors_palette)
+    fig = px.scatter_3d(rfm, x='R', y='F', z='M', color='Segment 1', size='RFM_count',
+                        color_discrete_map=colors_palette, opacity=1, size_max=40)
+
     fig.update_layout(scene=dict(
         xaxis_title='Recency',
         yaxis_title='Frequency',
         zaxis_title='Monetary'))
+
     st.write(fig)
 
     segments_counts = rfm['Segment 1'].value_counts().sort_values(ascending=False)
