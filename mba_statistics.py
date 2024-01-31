@@ -1,18 +1,16 @@
-import pandas as pd
 import streamlit as st
 import plotly.express as px
 
+
 def show_eda(invoices, invoices_lines, products, categories, transformed_sales_filter):
     st.subheader('Basket Size')
-    df = invoices.merge(invoices_lines, on="Invoice_ID")
-    new_df = df.groupby('Invoice_ID').agg(
+    df = invoices.merge(invoices_lines, on=transformed_sales_filter + '_ID')
+    new_df = df.groupby(transformed_sales_filter + '_ID').agg(
         {'Product_ID': lambda x: len(x)}).reset_index().sort_values(['Product_ID'])
     st.write(px.box(new_df, x="Product_ID").update_layout(xaxis_title='Number of items'))
 
     st.subheader('10 trending Products')
-    bar_data = invoices_lines.groupby('Product_ID')['Quantity'].sum().reset_index().merge(
-        products, on='Product_ID').groupby('Product_name')['Quantity'].sum().reset_index(
-    )[['Product_name', 'Quantity']]
+    bar_data = invoices_lines.groupby('Product_ID')['Quantity'].sum().reset_index().merge(products, on='Product_ID').groupby('Product_name')['Quantity'].sum().reset_index()[['Product_name', 'Quantity']]
     bar_data.sort_values('Quantity', ascending=False, inplace=True)
     st.write(px.bar(bar_data.head(10), x='Quantity', y='Product_name', orientation='h'))
 

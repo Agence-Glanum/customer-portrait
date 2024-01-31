@@ -49,8 +49,7 @@ def show_eda(invoices, orders, customers, products, categories, snapshot_start_d
     line_chart_order_data = line_chart_orders.groupby('Order_date').Order_ID.nunique()
     min_date = min(line_chart_invoice_data.index.min(), line_chart_order_data.index.min())
     max_date = max(line_chart_invoice_data.index.max(), line_chart_order_data.index.max())
-    st.subheader(f"Sales and Orders evolution through time for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]", divider='grey')
-
+    st.subheader(f"Invoice and Order values evolution through time for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]", divider='grey')
 
     fig2 = go.Figure()
     fig2.add_trace(go.Scatter(x=line_chart_invoices['Invoice_date'], y=line_chart_invoices['Total_price'].values,
@@ -71,8 +70,6 @@ def show_eda(invoices, orders, customers, products, categories, snapshot_start_d
 
     st.plotly_chart(fig2, use_container_width=True)
 
-    #####################################
-
     st.subheader(f"Customer type distribution for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]", divider='grey')
     fig = px.histogram(customers, x='Customer_type')
     st.plotly_chart(fig, use_container_width=True)
@@ -80,7 +77,7 @@ def show_eda(invoices, orders, customers, products, categories, snapshot_start_d
     invoices_reset = invoices.reset_index(drop=True)
     orders_reset = orders.reset_index(drop=True)
 
-    st.subheader(f"Minimum/Maximum invoices and orders value for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]", divider='grey')
+    st.subheader(f"Boxplot for Invoice and Order values for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]", divider='grey')
 
     fig = make_subplots(rows=1, cols=1)
 

@@ -1,17 +1,18 @@
 import pandas as pd
 import streamlit as st
+from sklearn.manifold import TSNE
+import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-from sklearn.preprocessing import MinMaxScaler
 from yellowbrick.cluster import SilhouetteVisualizer
 
 
-def compute_values(x, y, invoices):
-    fx_ = len(invoices[invoices['Product_ID'] == x])
-    fy_ = len(invoices[invoices['Product_ID'] == y])
+def compute_values(x, y, df_sales):
+    fx_ = len(df_sales[df_sales['Product_ID'] == x])
+    fy_ = len(df_sales[df_sales['Product_ID'] == y])
 
-    df = invoices.groupby('Invoice_ID')['Product_ID'].apply(list).reset_index(name='new')
+    df = df_sales.groupby('Invoice_ID')['Product_ID'].apply(list).reset_index(name='new')
 
     def is_subset_present(row, subset):
         return all(elem in row for elem in subset)
@@ -19,9 +20,9 @@ def compute_values(x, y, invoices):
     fxy_ = df['new'].apply(lambda row: is_subset_present(row, [x, y])).sum()
 
     try:
-        support = fxy_ / len(invoices)
-        confidence = support / (fx_ / len(invoices))
-        lift = confidence / (fy_ / len(invoices))
+        support = fxy_ / len(df_sales)
+        confidence = support / (fx_ / len(df_sales))
+        lift = confidence / (fy_ / len(df_sales))
     except ZeroDivisionError:
         support = None
         confidence = None
@@ -30,26 +31,19 @@ def compute_values(x, y, invoices):
     return round(support * 100, 2), round(confidence * 100, 2), round(lift * 100, 2)
 
 
-def clean_data(products, invoices, invoice_lines, categories):
-    df = invoices.merge(invoice_lines, on='Invoice_ID')
+def clean_data(products, df_sales, df_lines, transformed_sales_filter):
+    df = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID')
     df = df[['Product_ID', 'Customer_ID', 'Total_price_x']]
-    st.write('Total of sold products before : ', df['Product_ID'].nunique())
     df = df.groupby(['Customer_ID', 'Product_ID'])['Total_price_x'].sum().reset_index()
-    st.write('Total of sold products after : ', df['Product_ID'].nunique())
-    st.write('This is due to Customer_ID is None for certain customers.')
 
     df = df.pivot(index='Customer_ID', columns='Product_ID', values='Total_price_x').fillna(0.0)
-    df.columns = [str(col) for col in df.columns]
-    st.write('Dataframe for products : ')
-    st.write(df)
+    df.columns = ['Prod_' + str(col) for col in df.columns]
 
-    df_cat = invoices.merge(invoice_lines, on='Invoice_ID').merge(products, on='Product_ID')
+    df_cat = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID').merge(products, on='Product_ID')
     df_cat = df_cat[['Product_ID', 'Category_ID', 'Customer_ID', 'Total_price_x']]
     df_cat = df_cat.groupby(['Customer_ID', 'Category_ID'])['Total_price_x'].sum().reset_index()
     df_cat = df_cat.pivot(index='Customer_ID', columns='Category_ID', values='Total_price_x').fillna(0.0)
-    df_cat.columns = [str(col) for col in df_cat.columns]
-    st.write('Dataframe for categories : ')
-    st.write(df_cat)
+    df_cat.columns = ['Cat_' + str(col) for col in df_cat.columns]
 
     # To have the name of the products
     # df = df.groupby(['Customer_ID', 'Product_ID'])['Total_price_x'].sum()
@@ -93,7 +87,7 @@ def clean_data(products, invoices, invoice_lines, categories):
     # st.write(value_counts)
     # st.write(value_counts.shape)
 
-    return df_cat
+    return df, df_cat
 
 
 def elbow_method(scaled_features):
@@ -121,21 +115,7 @@ def basket_clusters(scaled_features, nb_clusters):
     pred = kmeans.predict(scaled_features)
     scaled_features['cluster'] = pred
 
-    avg_df = scaled_features.groupby(['cluster'], as_index=False).mean()
-
-    st.write(avg_df)
-
-    scaler = MinMaxScaler()
-    avg_df[scaled_features.drop('cluster', axis=1).columns] = scaler.fit_transform(avg_df[scaled_features.drop('cluster', axis=1).columns])
-
-    fig = px.imshow(avg_df.drop(['cluster'], axis=1))
-    st.write(fig)
-
-    with st.expander("See explanation"):
-        st.write(
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
-
-    return
+    return scaled_features
 
 
 def compute_affinity_values(products, invoices_lines):
@@ -164,16 +144,50 @@ def compute_affinity_values(products, invoices_lines):
         st.write('Generally speaking, bigger the lift number, higher is the association.')
 
 
-def prod_aff_main_function(invoices, invoices_lines, products, categories, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
-    st.header(f'Product affinities for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]')
-    compute_affinity_values(products, invoices_lines)
+def prod_aff_main_function(df_sales, df_lines, products, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
+    # st.header(f'Product affinities for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]')
+    # compute_affinity_values(products, df_lines)
 
     st.header(f'Basket Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]')
-    features = clean_data(products, invoices, invoices_lines, categories)
-    st.subheader(f"Elbow method for optimal number of Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]", divider='grey')
-    elbow_method(features)
-    nb_clusters_product = st.slider('Number of Clusters', 2, 11, 4)
-    basket_clusters(features, nb_clusters_product)
+    product_features, categorie_features = clean_data(products, df_sales, df_lines, transformed_sales_filter)
+    choice = st.radio('Based on ?', ['Products', 'Categories'])
+    if choice == 'Products':
+        elbow_method(product_features)
+        nb_clusters_product = st.slider('Number of Clusters', 2, 11, 4)
+        avg_df = basket_clusters(product_features, nb_clusters_product)
+
+        tsne = TSNE(n_components=2, random_state=0)
+        projections = tsne.fit_transform(avg_df)
+        fig = px.scatter(projections, x=0, y=1, color=avg_df.cluster)
+        st.write(fig)
+
+        tsne = TSNE(n_components=3, random_state=0)
+        projections = tsne.fit_transform(avg_df)
+        fig = px.scatter_3d(projections, x=0, y=1, z=2, color=avg_df.cluster)
+        st.write(fig)
+
+        # umap_2d = UMAP(n_components=2, init='random', random_state=0)
+        # proj_2d = umap_2d.fit_transform(avg_df)
+        # fig_2d = px.scatter(
+        #     proj_2d, x=0, y=1
+        # )
+        # st.write(fig_2d)
+
+    else:
+        elbow_method(categorie_features)
+        nb_clusters_product = st.slider('Number of Clusters', 2, 11, 4)
+        avg_df = basket_clusters(categorie_features, nb_clusters_product)
+        avg_df = avg_df.groupby(['cluster'], as_index=False).mean().set_index('cluster')
+
+        fig = go.Figure()
+        for i in range(len(avg_df)):
+            fig.add_trace(go.Scatterpolar(
+                r=[avg_df[j][i] for j in avg_df.columns],
+                theta=avg_df.columns,
+                fill='toself',
+                name='Cluster ' + str(i)
+            ))
+        st.write(fig)
 
     return
 

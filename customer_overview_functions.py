@@ -40,8 +40,8 @@ def compute_lifetime_value(df, df_lines):
     return cltv_df
 
 
-def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoices, invoices_lines, customers, orders, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
-    cltv_df = compute_lifetime_value(invoices, invoices_lines)
+def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
+    cltv_df = compute_lifetime_value(df_sales, df_lines)
     customer_id = st.selectbox('Customers', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
 
@@ -63,47 +63,37 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
     col3.metric("Median CLTV", round(cltv_df['CLTV'].median(), 2))
     col3.metric("Average CLTV", round(cltv_df['CLTV'].mean(), 2))
 
-    filtered_invoices = invoices[invoices['Customer_ID'] == customer_id].copy()
-    filtered_orders = orders[orders['Customer_ID'] == customer_id].copy()
-
-    filtered_invoices['Invoice_date'] = pd.to_datetime(filtered_invoices['Invoice_date']).dt.normalize()
-    filtered_orders['Order_date'] = pd.to_datetime(filtered_orders['Order_date']).dt.normalize()
-    layout = go.Layout(
-        width=400,
-        height=400,
-    )
-
-    line_chart_invoice_data = filtered_invoices.groupby(['Invoice_date', 'Total_price']).size().reset_index(
-        name='count')
-    line_chart_order_data = filtered_orders.groupby(['Order_date', 'Total_price']).size().reset_index(name='count')
-
-    st.subheader(f'Sales and Orders evolution through time for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', divider='grey')
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(x=line_chart_invoice_data['Invoice_date'].explode(), y=line_chart_invoice_data['Total_price'].explode(),
-               name='Invoices'))
-    fig.add_trace(
-        go.Scatter(x=line_chart_order_data['Order_date'].explode(), y=line_chart_order_data['Total_price'].explode(),
-               name='Orders'))
-    st.plotly_chart(fig, use_container_width=True)
+    # filtered_df = df_sales[df_sales['Customer_ID'] == customer_id].copy()
+    #
+    # filtered_df[transformed_sales_filter + '_date'] = pd.to_datetime(filtered_df[transformed_sales_filter + '_date']).dt.normalize()
+    #
+    # line_chart_data = filtered_df.groupby([transformed_sales_filter + '_date', 'Total_price']).size().reset_index(name='count')
+    #
+    # st.subheader(
+    #     f'Sales and Orders evolution through time for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
+    #     divider='grey')
+    # fig = go.Figure()
+    # fig.add_trace(go.Scatter(x=line_chart_data[transformed_sales_filter + '_date'].explode(),
+    #                          y=line_chart_data['Total_price'].explode()))
+    # st.plotly_chart(fig, use_container_width=True)
 
     return
 
 
-def customer_overview_data_function(rfm, invoices, invoices_lines):
-    cltv_df = compute_lifetime_value(invoices, invoices_lines)
+def customer_overview_data_function(rfm, df_sales, df_lines):
+    cltv_df = compute_lifetime_value(df_sales, df_lines)
 
     merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
                          left_on='Customer_ID', right_on='Customer_ID', how='inner')
 
     customer_id = st.selectbox('', ((merged_df['Customer_ID'].astype(int)).astype(str) + ' - ' + merged_df['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
-    st.dataframe(merged_df[merged_df['Customer_ID'] == customer_id], use_container_width=True)    # st.dataframe(cltv_df[cltv_df.index == customer_id], use_container_width=True)
+    st.dataframe(merged_df[merged_df['Customer_ID'] == customer_id], use_container_width=True)
     return
 
 
-def customers_overview_data_function(rfm, invoices, invoices_lines):
-    cltv_df = compute_lifetime_value(invoices, invoices_lines)
+def customers_overview_data_function(rfm, df_sales, df_lines):
+    cltv_df = compute_lifetime_value(df_sales, df_lines)
 
     merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
                          left_on='Customer_ID', right_on='Customer_ID', how='inner')

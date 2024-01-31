@@ -1,10 +1,6 @@
 import datetime
-
-import pandas as pd
 import streamlit as st
-
 from categories_tree import categories_tree
-# from categories_tree import categories_tree
 from customer_overview_functions import customer_overview_main_function
 from home_functions import show_eda
 from product_affinity_functions import prod_aff_main_function
@@ -26,7 +22,7 @@ with st.sidebar:
 
     sales_filter = st.radio(
         "Analyze your sales based on",
-        ["***Invoice***", "***Order***"], disabled=True,
+        ["***Invoice***", "***Order***"],
         captions=["Sold items", "Ordered items"])
     transformed_sales_filter = sales_filter.replace('*', '')
     today = datetime.datetime.now()
@@ -44,41 +40,46 @@ address, categories, customers, invoices, invoices_lines, orders, orders_lines, 
 home_tab, rfm_seg_tab, mba_tab, customer_tab = st.tabs(["Home", "RFM Segmentation", "MBA", "Customer Overview"])
 
 if sales_filter == "***Invoice***":
-    df = invoices
-    if not df.empty:
-        with home_tab:
-            show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date, directory, transformed_sales_filter)
+    df_sales = invoices
+    df_lines = invoices_lines
 
-        with rfm_seg_tab:
-            rfm, scaler, kmeans, average_clusters = rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_start_date, transformed_sales_filter)
+if sales_filter == "***Order***":
+    df_sales = orders
+    df_lines = orders_lines
 
-        with mba_tab:
-            mba_statistics, prod_aff_tab, most_freq_tab, product_pred_tab, data_tab = st.tabs(["Statistics", "Product affinity", "Most Frequent Pattern", "Next product prediction", "Data"])
-            with mba_statistics:
-                mba_statistics_main_function(invoices, invoices_lines, products, categories, snapshot_start_date, snapshot_end_date, directory, transformed_sales_filter)
-            with prod_aff_tab:
-                prod_aff_main_function(invoices, invoices_lines, products, categories, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
-            with most_freq_tab:
-                most_frequent_pattern_main_function(invoices_lines, products)
-            with data_tab:
-                st.subheader(
+if not df_sales.empty and not df_lines.empty:
+    with home_tab:
+        show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date, directory, transformed_sales_filter)
+
+    with rfm_seg_tab:
+        rfm, scaler, kmeans, average_clusters = rfm_main_function(df_sales, snapshot_end_date, customers, directory, snapshot_start_date, transformed_sales_filter)
+
+    with mba_tab:
+        mba_statistics, prod_aff_tab, most_freq_tab, product_pred_tab, data_tab = st.tabs(["Statistics", "Product affinity", "Most Frequent Pattern", "Next product prediction", "Data"])
+        with mba_statistics:
+            mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date, snapshot_end_date, directory, transformed_sales_filter)
+        with prod_aff_tab:
+            prod_aff_main_function(df_sales, df_lines, products, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+        with most_freq_tab:
+            most_frequent_pattern_main_function(df_lines, products, transformed_sales_filter)
+        with data_tab:
+            st.subheader(
                     f"Categories details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]",
                     divider='grey')
-                st.dataframe(categories_tree(categories, products, directory), use_container_width=True)
+            st.dataframe(categories_tree(categories, products, directory), use_container_width=True)
 
-        with customer_tab:
-            data_tab, overview_tab = st.tabs(["Data", "customer overview"])
-            with overview_tab:
-                customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoices, invoices_lines, customers, orders, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
-            with data_tab:
-                customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
-                with customer_data_tab:
-                    customer_overview_data_function(rfm, invoices, invoices_lines)
-                with customers_data_tab:
-                    customers_overview_data_function(rfm, invoices, invoices_lines)
-
-    else:
-        st.error("No data available for the selected time period !")
+    with customer_tab:
+        overview_tab, data_tab = st.tabs(["Customer overview", "Data"])
+        with overview_tab:
+            customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+        with data_tab:
+            customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
+            with customer_data_tab:
+                customer_overview_data_function(rfm, df_sales, df_lines)
+            with customers_data_tab:
+                customers_overview_data_function(rfm, df_sales, df_lines)
+else:
+    st.error("No data available for the selected time period !")
 
 if __name__ == '__main__':
     print('#########################################')
