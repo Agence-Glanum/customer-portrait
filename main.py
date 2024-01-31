@@ -69,7 +69,7 @@ if sales_filter == "***Invoice***":
         with customer_tab:
             overview_tab, data_tab = st.tabs(["Customer Overview", "Data"])
             with overview_tab:
-                customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoices, invoices_lines, customers, orders, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+                customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoices, invoices_lines, customers, orders, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter, address)
             with data_tab:
                 customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
                 with customer_data_tab:
