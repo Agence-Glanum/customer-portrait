@@ -4,7 +4,6 @@ import pandas as pd
 import streamlit as st
 
 from categories_tree import categories_tree
-# from categories_tree import categories_tree
 from customer_overview_functions import customer_overview_main_function
 from home_functions import show_eda
 from product_affinity_functions import prod_aff_main_function
@@ -14,7 +13,8 @@ from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data
 from utils.get_data import transform_data
 from customer_overview_functions import customer_overview_data_function
-# from customer_overview_functions import customers_overview_data_function
+# from map_function import map_function
+
 st.set_page_config(page_title="Customer Portrait", layout="wide")
 st.title(f"Customer Portrait")
 
@@ -78,7 +78,9 @@ if sales_filter == "***Invoice***":
                 with customers_data_tab:
                     # customers_overview_data_function(rfm, invoices, invoices_lines)
                     customer_overview_data_function(rfm, invoices, invoices_lines, show_full_dataframe=True)
-
+        # with map_tab:
+        #     # map_function(address)
+        #     print("map tab")
     else:
         st.error("No data available for the selected time period !")
 

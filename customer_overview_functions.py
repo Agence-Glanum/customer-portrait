@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import geopandas as gpd
-
+import json
 
 def get_info(rfm, customer_id, scaler, kmeans):
     col_names = ['Recency', 'Frequency', 'Monetary']
@@ -42,31 +42,49 @@ def compute_lifetime_value(df, df_lines):
 
 
 def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoices, invoices_lines, customers, orders,
-                                    directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter, address):
+                                    directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter,
+                                    address):
 
     cltv_df = compute_lifetime_value(invoices, invoices_lines)
     customer_id = st.selectbox('Customers', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
 
     customer_zip = address[address['Customer_ID'] == customer_id]
+    customer_zip.loc[:, "Zip_code"] = customer_zip["Zip_code"].str[:2]
     print(customer_zip)
-    customer_zip["Zip_code"] = customer_zip["Zip_code"].str[:2]
     geojson_path = './data/contour-des-departements.geojson'
-    geojson_world = './data/world.json'
+    geojson_world = './data/curiexplore-pays.geojson'
+
+    ### map countries
+    gdf_departements2 = gpd.read_file(geojson_world)
+    gdf_occurences2 = gdf_departements2.merge(customer_zip["Country"], how='left', left_on='code', right_on='Country')
+    gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
+    fig3 = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
+                                featureidkey='properties.code',
+                                color_continuous_scale="Viridis",
+                                range_color=(0, 12),
+                                mapbox_style="carto-positron",
+                                zoom=1, center={"lat": 46.6031, "lon": 1.8883},
+                                opacity=0.8,
+                                )
+    fig3.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
+
+
+    ### map departments
     gdf_departements = gpd.read_file(geojson_path)
-    customer_zip["Zip_code"] = customer_zip["Zip_code"].astype(str)
-    gdf_occurrences = gdf_departements.merge(customer_zip["Zip_code"], how='left', left_on='code', right_on='Zip_code')
-    gdf_occurrences['Zip_code'] = gdf_occurrences['Zip_code'].fillna(0)
+    # customer_zip["Zip_code"] = customer_zip["Zip_code"].astype(str)
+    # gdf_occurrences = gdf_departements.merge(customer_zip["Zip_code"], how='left', left_on='code', right_on='Zip_code')
+    # gdf_occurrences['Zip_code'] = gdf_occurrences['Zip_code'].fillna(0)
     fig2 = px.choropleth_mapbox(customer_zip, geojson=gdf_departements, locations='Zip_code', color='Zip_code',
-                                width=1000,
-                                height=400,
                                 color_continuous_scale="Viridis",
                                 range_color=(0, 12),
                                 mapbox_style="carto-positron",
                                 zoom=3.5, center={"lat": 46.6031, "lon": 1.8883},
                                 opacity=0.8,
                                 )
-    fig2.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    fig2.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
+
+    ####
 
     col1, col2, col3 = st.columns(3)
 
@@ -86,7 +104,6 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
     col3.metric("Median CLTV", round(cltv_df['CLTV'].median(), 2))
     col3.metric("Average CLTV", round(cltv_df['CLTV'].mean(), 2))
 
-    st.write(fig2)
     filtered_invoices = invoices[invoices['Customer_ID'] == customer_id].copy()
     filtered_orders = orders[orders['Customer_ID'] == customer_id].copy()
 
@@ -101,9 +118,17 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
         name='count')
     line_chart_order_data = filtered_orders.groupby(['Order_date', 'Total_price']).size().reset_index(name='count')
 
+    st.subheader('Customer Location')
+
+    if (customer_zip["Country"] == "FR").any():
+        st.write(fig2)
+    else:
+        st.write(fig3)
+
     st.subheader(
         f'Sales and Orders evolution through time for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
         divider='grey')
+
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(x=line_chart_invoice_data['Invoice_date'].explode(),
@@ -123,6 +148,7 @@ def merge_cltv_rfm(cltv_df, rfm):
 
 
 def customer_overview_data_function(rfm, invoices, invoices_lines, show_full_dataframe=False):
+
     cltv_df = compute_lifetime_value(invoices, invoices_lines)
 
     merged_df = merge_cltv_rfm(cltv_df, rfm)
@@ -131,7 +157,7 @@ def customer_overview_data_function(rfm, invoices, invoices_lines, show_full_dat
         st.dataframe(merged_df, use_container_width=True, )
     else:
         customer_id = st.selectbox('Customer', (
-                    (merged_df['Customer_ID'].astype(int)).astype(str) + ' - ' + merged_df['Customer_name']))
+                (merged_df['Customer_ID'].astype(int)).astype(str) + ' - ' + merged_df['Customer_name']))
         customer_id = int(customer_id.split(' - ')[0])
         st.dataframe(merged_df[merged_df['Customer_ID'] == customer_id], use_container_width=True)
 
