@@ -38,6 +38,15 @@ def transform_data(directory):
     return address, categories, customer, invoices, invoices_lines, orders, orders_lines, products
 
 
+def get_dates(directory):
+    address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
+
+    DATE_MIN = min(invoices['Invoice_date'].min(), orders['Order_date'].min())
+    DATE_MAX = max(invoices['Invoice_date'].max(), orders['Order_date'].max())
+
+    return DATE_MIN, DATE_MAX
+
+
 def filter_data(snapshot_start_date, snapshot_end_date, directory):
     address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
 
