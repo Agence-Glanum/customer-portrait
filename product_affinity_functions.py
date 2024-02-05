@@ -72,10 +72,9 @@ def show_radar_plot(categorie_features):
     return
 
 
-def kmeans_model(features, mode):
+def kmeans_model(features, mode, nb_clusters):
     elbow_method(features)
-    nb_clusters_product = st.slider('Number of Product Clusters', 2, 11, 4)
-    model = KMeans(n_clusters=nb_clusters_product, init='k-means++')
+    model = KMeans(n_clusters=nb_clusters, init='k-means++')
     model.fit(features)
     st.write("Silhouette score : ", round(silhouette_score(features, model.labels_, metric='euclidean'), 2))
     pred = model.predict(features)
@@ -142,7 +141,8 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
                                   ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
 
     if product_model_name == 'Kmeans':
-        kmeans_model(product_features, 'umap')
+        nb_clusters_product = st.slider('Number of product clusters', 2, 11, 4)
+        kmeans_model(product_features, 'umap', nb_clusters_product)
     elif product_model_name == 'HDBScan':
         hdbscan_model(product_features, 'umap')
     else:
@@ -154,7 +154,8 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
                                    ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
 
     if category_model_name == 'Kmeans':
-        kmeans_model(category_features, 'radar')
+        nb_clusters_category = st.slider('Number of category clusters', 2, 11, 4)
+        kmeans_model(category_features, 'radar', nb_clusters_category)
     elif category_model_name == 'HDBScan':
         hdbscan_model(category_features, 'radar')
     else:

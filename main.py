@@ -73,13 +73,13 @@ if not df_sales.empty and not df_lines.empty:
     with customer_tab:
         overview_tab, data_tab = st.tabs(["Customer overview", "Data"])
         with overview_tab:
-            cltv_df = customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+            cltv_df = customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, transformed_sales_filter)
         with data_tab:
             customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
             with customer_data_tab:
-                customer_overview_data_function(rfm, df_sales, df_lines)
+                customer_overview_data_function(rfm, df_sales, df_lines, transformed_sales_filter)
             with customers_data_tab:
-                customer_overview_data_function(rfm, df_sales, df_lines, show_full_dataframe=True)
+                customer_overview_data_function(rfm, df_sales, df_lines, transformed_sales_filter, show_full_dataframe=True)
 else:
     st.error("No data available for the selected time period !")
 
