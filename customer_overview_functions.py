@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
 
 
 def get_info(rfm, customer_id, scaler, kmeans):
@@ -16,13 +15,13 @@ def get_info(rfm, customer_id, scaler, kmeans):
     return customer_cluster, customer_segment_1, customer_segment_2
 
 
-def compute_lifetime_value(df, df_lines):
-    df_final = df.merge(df_lines, left_on='Invoice_ID', right_on='Invoice_ID')
+def compute_lifetime_value(df, df_lines, transformed_sales_filter):
+    df_final = df.merge(df_lines, left_on=transformed_sales_filter + '_ID', right_on=transformed_sales_filter + '_ID')
 
     cltv_df = df_final.groupby("Customer_ID").agg(
         {
-            "Invoice_date": lambda x: (x.max() - x.min()).days,
-            "Invoice_ID": lambda x: len(x),
+            transformed_sales_filter + "_date": lambda x: (x.max() - x.min()).days,
+            transformed_sales_filter + "_ID": lambda x: len(x),
             "Quantity": lambda x: x.sum(),
             "Total_price_y": lambda x: x.sum(),
         }
@@ -41,7 +40,7 @@ def compute_lifetime_value(df, df_lines):
 
 
 def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
-    cltv_df = compute_lifetime_value(df_sales, df_lines)
+    cltv_df = compute_lifetime_value(df_sales, df_lines, transformed_sales_filter)
     customer_id = st.selectbox('Customers', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
 
@@ -77,11 +76,10 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sa
     #                          y=line_chart_data['Total_price'].explode()))
     # st.plotly_chart(fig, use_container_width=True)
 
-    return
+    return cltv_df
 
 
-def customer_overview_data_function(rfm, df_sales, df_lines):
-    cltv_df = compute_lifetime_value(df_sales, df_lines)
+def customer_overview_data_function(rfm, cltv_df):
 
     merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
                          left_on='Customer_ID', right_on='Customer_ID', how='inner')
@@ -92,8 +90,7 @@ def customer_overview_data_function(rfm, df_sales, df_lines):
     return
 
 
-def customers_overview_data_function(rfm, df_sales, df_lines):
-    cltv_df = compute_lifetime_value(df_sales, df_lines)
+def customers_overview_data_function(rfm, cltv_df):
 
     merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
                          left_on='Customer_ID', right_on='Customer_ID', how='inner')

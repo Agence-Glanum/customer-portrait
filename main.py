@@ -7,8 +7,7 @@ from product_affinity_functions import prod_aff_main_function
 from rfm_segmentation_functions import rfm_main_function
 from most_frequent_pattern import most_frequent_pattern_main_function
 from mba_statistics import mba_statistics_main_function
-from utils.get_data import filter_data
-from utils.get_data import transform_data
+from utils.get_data import filter_data, get_dates
 from customer_overview_functions import customer_overview_data_function
 from customer_overview_functions import customers_overview_data_function
 st.set_page_config(page_title="Customer Portrait", layout="wide")
@@ -18,7 +17,8 @@ with st.sidebar:
     directory = st.selectbox(
         "Choose which data to analyse",
         ["Ici store", "Glanum"])
-    address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
+
+    DATE_MIN, DATE_MAX = get_dates(directory)
 
     sales_filter = st.radio(
         "Analyze your sales based on",
@@ -28,10 +28,10 @@ with st.sidebar:
     today = datetime.datetime.now()
     st.write("Choose a date range")
 
-    snapshot_start_date = st.date_input("Start date", format="DD/MM/YYYY", value=invoices["Invoice_date"].min(),
+    snapshot_start_date = st.date_input("Start date", format="DD/MM/YYYY", value=DATE_MIN,
                                         min_value=datetime.date(1970, 1, 1), max_value=datetime.date.today())
 
-    snapshot_end_date = st.date_input("End date", format="DD/MM/YYYY", value=invoices["Invoice_date"].max(),
+    snapshot_end_date = st.date_input("End date", format="DD/MM/YYYY", value=DATE_MAX,
                                       min_value=datetime.date(1970, 1, 1), max_value=datetime.date.today())
 
 address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(
@@ -40,12 +40,13 @@ address, categories, customers, invoices, invoices_lines, orders, orders_lines, 
 home_tab, rfm_seg_tab, mba_tab, customer_tab = st.tabs(["Home", "RFM Segmentation", "MBA", "Customer Overview"])
 
 if sales_filter == "***Invoice***":
-    df_sales = invoices
-    df_lines = invoices_lines
+    df_sales = invoices[(invoices['Paid'] == 1) & (invoices['Total_price'] > 0) & (invoices['Customer_ID'] is not None)]
+    df_lines = invoices_lines[(invoices_lines['Quantity'] > 0) & (invoices_lines['Total_price'] > 0)]
 
 if sales_filter == "***Order***":
-    df_sales = orders
-    df_lines = orders_lines
+    df_sales = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
+                      & (orders['Total_price'] > 0) & (orders['Customer_ID'] is not None)]
+    df_lines = orders_lines[(orders_lines['Quantity'] > 0) & (orders_lines['Total_price'] > 0)]
 
 if not df_sales.empty and not df_lines.empty:
     with home_tab:
@@ -59,7 +60,7 @@ if not df_sales.empty and not df_lines.empty:
         with mba_statistics:
             mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date, snapshot_end_date, directory, transformed_sales_filter)
         with prod_aff_tab:
-            prod_aff_main_function(df_sales, df_lines, products, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+            prod_aff_main_function(df_sales, df_lines, categories, products, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
         with most_freq_tab:
             most_frequent_pattern_main_function(df_lines, products, transformed_sales_filter)
         with data_tab:
@@ -71,13 +72,13 @@ if not df_sales.empty and not df_lines.empty:
     with customer_tab:
         overview_tab, data_tab = st.tabs(["Customer overview", "Data"])
         with overview_tab:
-            customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+            cltv_df = customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
         with data_tab:
             customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
             with customer_data_tab:
-                customer_overview_data_function(rfm, df_sales, df_lines)
+                customer_overview_data_function(rfm, cltv_df)
             with customers_data_tab:
-                customers_overview_data_function(rfm, df_sales, df_lines)
+                customers_overview_data_function(rfm, cltv_df)
 else:
     st.error("No data available for the selected time period !")
 
