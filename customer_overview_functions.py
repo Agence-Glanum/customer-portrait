@@ -17,13 +17,13 @@ def get_info(rfm, customer_id, scaler, kmeans):
     return customer_cluster, customer_segment_1, customer_segment_2
 
 
-def compute_lifetime_value(df, df_lines):
-    df_final = df.merge(df_lines, left_on='Invoice_ID', right_on='Invoice_ID')
+def compute_lifetime_value(df, df_lines, transformed_sales_filter):
+    df_final = df.merge(df_lines, left_on=transformed_sales_filter + '_ID', right_on=transformed_sales_filter + '_ID')
 
     cltv_df = df_final.groupby("Customer_ID").agg(
         {
-            "Invoice_date": lambda x: (x.max() - x.min()).days,
-            "Invoice_ID": lambda x: len(x),
+            transformed_sales_filter + "_date": lambda x: (x.max() - x.min()).days,
+            transformed_sales_filter + "_ID": lambda x: len(x),
             "Quantity": lambda x: x.sum(),
             "Total_price_y": lambda x: x.sum(),
         }
@@ -41,11 +41,11 @@ def compute_lifetime_value(df, df_lines):
     return cltv_df
 
 
-def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoices, invoices_lines, customers, orders,
+def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, customers, orders,
                                     directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter,
                                     address):
 
-    cltv_df = compute_lifetime_value(invoices, invoices_lines)
+    cltv_df = compute_lifetime_value(df_sales, df_lines, transformed_sales_filter)
     customer_id = st.selectbox('Customers', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
 
@@ -104,9 +104,6 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
     col3.metric("Median CLTV", round(cltv_df['CLTV'].median(), 2))
     col3.metric("Average CLTV", round(cltv_df['CLTV'].mean(), 2))
 
-    filtered_invoices = invoices[invoices['Customer_ID'] == customer_id].copy()
-    filtered_orders = orders[orders['Customer_ID'] == customer_id].copy()
-
     filtered_invoices['Invoice_date'] = pd.to_datetime(filtered_invoices['Invoice_date']).dt.normalize()
     filtered_orders['Order_date'] = pd.to_datetime(filtered_orders['Order_date']).dt.normalize()
     layout = go.Layout(
@@ -145,11 +142,11 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
 def merge_cltv_rfm(cltv_df, rfm):
     return pd.merge(cltv_df, rfm[['Customer_ID', 'Segment 1', 'Segment 2', 'Customer_name']],
                     left_on='Customer_ID', right_on='Customer_ID', how='inner')
+  
 
+def customer_overview_data_function(rfm, df_sales, df_lines, show_full_dataframe=False):
+    cltv_df = compute_lifetime_value(df_sales, df_lines)
 
-def customer_overview_data_function(rfm, invoices, invoices_lines, show_full_dataframe=False):
-
-    cltv_df = compute_lifetime_value(invoices, invoices_lines)
 
     merged_df = merge_cltv_rfm(cltv_df, rfm)
 

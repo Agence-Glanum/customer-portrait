@@ -12,18 +12,18 @@ import plotly.graph_objects as go
 from sklearn.preprocessing import MinMaxScaler
 
 
-def compute_rfm_segments(df, snapshot_end_date):
+def compute_rfm_segments(df, snapshot_end_date, transformed_sales_filter):
     snapshot_end_date = pd.to_datetime(snapshot_end_date)
 
     rfm = df.groupby('Customer_ID').agg(
-        {'Invoice_date': lambda x: (snapshot_end_date - x.max()).days,
-         'Invoice_ID': lambda x: len(x),
+        {transformed_sales_filter + '_date': lambda x: (snapshot_end_date - x.max()).days,
+         transformed_sales_filter + '_ID': lambda x: len(x),
          'Total_price': lambda x: x.sum()}).reset_index()
 
-    rfm['Invoice_date'] = rfm['Invoice_date'].astype(int)
+    rfm[transformed_sales_filter + '_date'] = rfm[transformed_sales_filter + '_date'].astype(int)
 
-    rfm.rename(columns={'Invoice_date': 'Recency',
-                        'Invoice_ID': 'Frequency',
+    rfm.rename(columns={transformed_sales_filter + '_date': 'Recency',
+                        transformed_sales_filter + '_ID': 'Frequency',
                         'Total_price': 'Monetary'}, inplace=True)
     quintiles = rfm[['Recency', 'Frequency', 'Monetary']].quantile([.2, .4, .6, .8]).to_dict()
 
@@ -59,8 +59,9 @@ def compute_rfm_segments(df, snapshot_end_date):
 
 
 def show_rfm_distribution(rfm, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
-
-    st.subheader(f'Recency, Frequency, Monetary Distribution for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]', divider='grey')
+    st.subheader(
+        f'Recency, Frequency, Monetary Distribution for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
+        divider='grey')
     fig = make_subplots(rows=3, cols=1, subplot_titles=("Recency", "Frequency", "Monetary"))
     for i, j in enumerate(['Recency', 'Frequency', 'Monetary']):
         fig.add_box(x=rfm[str(j)], row=i + 1, col=1, name=str(j))
@@ -122,7 +123,8 @@ def elbow_method(scaled_features):
     return
 
 
-def customer_segmentation_model(scaled_features, nb_clusters, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
+def customer_segmentation_model(scaled_features, nb_clusters, directory, snapshot_start_date, snapshot_end_date,
+                                transformed_sales_filter):
     kmeans = KMeans(n_clusters=nb_clusters, init='k-means++')
     kmeans.fit(scaled_features)
 
@@ -136,7 +138,9 @@ def customer_segmentation_model(scaled_features, nb_clusters, directory, snapsho
     scaler = MinMaxScaler()
     avg_df[['Recency', 'Frequency', 'Monetary']] = scaler.fit_transform(avg_df[['Recency', 'Frequency', 'Monetary']])
 
-    st.subheader(f'RFM Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]', divider='grey')
+    st.subheader(
+        f'RFM Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
+        divider='grey')
     fig = go.Figure()
     for i in range(len(avg_df['cluster'])):
         fig.add_trace(go.Scatterpolar(
@@ -155,20 +159,25 @@ def customer_segmentation_model(scaled_features, nb_clusters, directory, snapsho
         st.write("***Data Preparation:***")
         st.write(":u[RFM Scores:] Each customer is assigned RFM scores based on their transaction history.")
         st.write("***Unsupervised Learning with K-Means:***")
-        st.write(":u[Cluster Formation:] The K-means algorithm autonomously groups customers into clusters based on their RFM scores, without prior knowledge of customer labels or characteristics.")
-        st.write(":u[Cluster Centers:] The algorithm identifies cluster centers, each representing a set of characteristic RFM scores. These centers serve as reference points for cluster assignment.")
+        st.write(
+            ":u[Cluster Formation:] The K-means algorithm autonomously groups customers into clusters based on their RFM scores, without prior knowledge of customer labels or characteristics.")
+        st.write(
+            ":u[Cluster Centers:] The algorithm identifies cluster centers, each representing a set of characteristic RFM scores. These centers serve as reference points for cluster assignment.")
         st.write("***Interpretation Challenges:***")
-        st.write(":u[Label Absence:] Unlike supervised methods where clusters are predefined, K-means lacks explicit labels. Consequently, interpreting the nature of each cluster requires a deeper dive into the RFM characteristics of the customers within them.")
-        st.write(":u[Inherent Variety:] The absence of predefined labels results in clusters encompassing a diverse mix of customers. Without predetermined classifications, each cluster must be scrutinized individually to discern underlying patterns.")
+        st.write(
+            ":u[Label Absence:] Unlike supervised methods where clusters are predefined, K-means lacks explicit labels. Consequently, interpreting the nature of each cluster requires a deeper dive into the RFM characteristics of the customers within them.")
+        st.write(
+            ":u[Inherent Variety:] The absence of predefined labels results in clusters encompassing a diverse mix of customers. Without predetermined classifications, each cluster must be scrutinized individually to discern underlying patterns.")
         st.write("***Post-Clustering Analysis:***")
-        st.write(":u[Cluster Profiling:] Delving into the RFM scores within each cluster allows for post-clustering analysis. Examining the distribution of recency, frequency, and monetary values unveils the distinctive traits of each cluster.")
-        st.write(":u[Identifying Trends:] Although not explicitly labeled, trends may emerge within clusters. For instance, a cluster with low recency and high monetary values might indicate potential high-value customers.")
+        st.write(
+            ":u[Cluster Profiling:] Delving into the RFM scores within each cluster allows for post-clustering analysis. Examining the distribution of recency, frequency, and monetary values unveils the distinctive traits of each cluster.")
+        st.write(
+            ":u[Identifying Trends:] Although not explicitly labeled, trends may emerge within clusters. For instance, a cluster with low recency and high monetary values might indicate potential high-value customers.")
 
     return kmeans, avg_df
 
 
 def show_customer_segment_distribution(rfm):
-
     st.info(
         'This RFM Segmentation is based on this PhD thesis (2021): https://dergipark.org.tr/tr/download/article-file/2343280',
         icon="ℹ️")
@@ -228,10 +237,13 @@ def show_customer_segment_distribution(rfm):
 
     with st.expander("See explanation"):
         st.write("***:red[Takes into account Recency, Frequency and Monetary value !]***")
-        data = [["Star", "It is the customer group that makes purchases most frequently, most up-to-date and in the highest amounts. It is the customer group with the highest score in terms of purchase frequency and currency, and purchase amounts"],
+        data = [["Star",
+                 "It is the customer group that makes purchases most frequently, most up-to-date and in the highest amounts. It is the customer group with the highest score in terms of purchase frequency and currency, and purchase amounts"],
                 ["Loyal", "It is a group of customers who buy frequently, recently, with high amounts."],
-                ["Potential loyal", "This is the customer group with lower purchase relevance compared to the loyal customer segment."],
-                ["Hold and improve", "This is the customer group with low frequency and up-to-dateness. The purchasing stability of this group is low."],
+                ["Potential loyal",
+                 "This is the customer group with lower purchase relevance compared to the loyal customer segment."],
+                ["Hold and improve",
+                 "This is the customer group with low frequency and up-to-dateness. The purchasing stability of this group is low."],
                 ["Risky", "It is the customer group with the lowest purchase frequency and up-to-dateness."]]
         df = pd.DataFrame(data, columns=['Segment', 'Description'])
         st.table(df)
@@ -240,26 +252,37 @@ def show_customer_segment_distribution(rfm):
 
 
 def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_start_date, transformed_sales_filter):
-    rfm = compute_rfm_segments(df, snapshot_end_date)
+    rfm = compute_rfm_segments(df, snapshot_end_date, transformed_sales_filter)
 
-    col1, col2, col3, col4 = st.tabs(["RFM Distribution", "Customer Clusters using ML", "Customer Segments using RFM scores", "Data"])
+    col1, col2, col3, col4 = st.tabs(
+        ["RFM Distribution", "Customer Clusters using ML", "Customer Segments using RFM scores", "Data"])
 
     with col1:
         show_rfm_distribution(rfm, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
         show_rfm_scatter_3d(rfm)
     with col2:
         scaled_features, scaler = clean_data(rfm)
-        st.subheader(f"Elbow method for optimal number of Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]", divider='grey')
+        st.subheader(
+            f"Elbow method for optimal number of Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
+            divider='grey')
         elbow_method(scaled_features)
         nb_clusters = st.slider('Number of Clusters', 2, 12, 4)
-        kmeans, average_clusters = customer_segmentation_model(scaled_features, nb_clusters, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+        kmeans, average_clusters = customer_segmentation_model(scaled_features, nb_clusters, directory,
+                                                               snapshot_start_date, snapshot_end_date,
+                                                               transformed_sales_filter)
     with col3:
-        st.subheader(f'Customer Segment Distribution - First approach for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]', divider='grey')
+        st.subheader(
+            f'Customer Segment Distribution - First approach for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
+            divider='grey')
         show_customer_segment_distribution(rfm)
-        st.subheader(f'Customer Segment Distribution - Second approach for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]', divider='grey')
-        show_customer_segment_distribution_rf(rfm, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+        st.subheader(
+            f'Customer Segment Distribution - Second approach for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
+            divider='grey')
+        show_customer_segment_distribution_rfm(rfm)
     with col4:
-        st.subheader(f"All the details for each Customer for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]", divider='grey')
+        st.subheader(
+            f"All the details for each Customer for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
+            divider='grey')
         col_names = ['Recency', 'Frequency', 'Monetary']
         customer_cluster_list = []
         for customer_id in rfm['Customer_ID']:
@@ -270,17 +293,19 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
         rfm['Cluster'] = customer_cluster_list
         rfm = rfm.merge(customers[['Customer_ID', 'Customer_name']], on='Customer_ID')
         rfm['Customer_ID'] = rfm['Customer_ID'].astype(int)
-        customer_id_rfm = st.selectbox('Select a customer', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
+        customer_id_rfm = st.selectbox('Select a customer',
+                                       (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
         customer_id_rfm = int(customer_id_rfm.split(' - ')[0])
         st.dataframe(rfm[rfm['Customer_ID'] == customer_id_rfm], use_container_width=True)
-        st.subheader(f"Details for all customers for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]", divider='grey')
+        st.subheader(
+            f"Details for all customers for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
+            divider='grey')
         st.dataframe(rfm, use_container_width=True)
 
     return rfm, scaler, kmeans, average_clusters
 
 
-def show_customer_segment_distribution_rf(rfm, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
-
+def show_customer_segment_distribution_rfm(rfm):
     colors = {
         'Hibernating': '#83c9ff',
         'At risk': '#29b09d',
