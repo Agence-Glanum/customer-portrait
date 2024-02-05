@@ -9,7 +9,8 @@ from most_frequent_pattern import most_frequent_pattern_main_function
 from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
 from customer_overview_functions import customer_overview_data_function
-from customer_overview_functions import customers_overview_data_function
+# from map_function import map_function
+
 st.set_page_config(page_title="Customer Portrait", layout="wide")
 st.title(f"Customer Portrait")
 
@@ -76,9 +77,9 @@ if not df_sales.empty and not df_lines.empty:
         with data_tab:
             customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
             with customer_data_tab:
-                customer_overview_data_function(rfm, cltv_df)
+                customer_overview_data_function(rfm, df_sales, df_lines)
             with customers_data_tab:
-                customers_overview_data_function(rfm, cltv_df)
+                customer_overview_data_function(rfm, df_sales, df_lines, show_full_dataframe=True)
 else:
     st.error("No data available for the selected time period !")
 
