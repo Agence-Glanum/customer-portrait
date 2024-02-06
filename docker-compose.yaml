@@ -2,7 +2,7 @@ version: '3'
 
 services:
     customer-portrait:
-        image: your_image_name:${TAG}
+        image: ${IMAGE}:${TAG}
         volumes:
             - ${PATH}:/app/data
         ports:
