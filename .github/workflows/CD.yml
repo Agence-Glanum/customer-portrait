@@ -60,4 +60,4 @@ jobs:
         username: ${{ secrets.PC_USER }}
         password: ${{ secrets.PC_PASSWORD }}
         script: |
-          powershell -ExecutionPolicy Bypass -File docker-cleanup.ps1 ${{ secrets.NEXUS_HOST }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }}
+          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1 ${{ secrets.NEXUS_HOST }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }}
