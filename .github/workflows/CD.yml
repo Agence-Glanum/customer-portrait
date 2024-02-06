@@ -57,7 +57,7 @@ jobs:
       run: |
         sudo apt-get install -y sshpass
         ls -l
-        sshpass -p "${{ secrets.PC_PASSWORD }}" scp -o StrictHostKeyChecking=no -P 22 -r -f ./Dockerfile ${{ secrets.PC_USER }}@${{ secrets.PC_HOST }}:${{ secrets.PC_PATH }}
+        cat Dockerfile | sshpass -p "${{ secrets.PC_PASSWORD }}" ssh -o StrictHostKeyChecking=no -p 22 ${{ secrets.PC_USER }}@${{ secrets.PC_HOST }} "cat > ${{ secrets.PC_PATH }}/Dockerfile"
 
 #    -
 #      name: Deploy on Data PC
