@@ -56,7 +56,7 @@ jobs:
       name: Copy files to Data PC
       run: |
         sudo apt-get install -y sshpass
-        sshpass -p "${{ secrets.PC_PASSWORD }}" scp -o StrictHostKeyChecking=no -P 22 -r -f ./Dockerfile ${{ secrets.PC_USER }}@${{ secrets.PC_HOST }}:${{ secrets.PC_PATH }
+        sshpass -p "${{ secrets.PC_PASSWORD }}" scp -o StrictHostKeyChecking=no -P 22 -r -f ./Dockerfile ${{ secrets.PC_USER }}@${{ secrets.PC_HOST }}:${{ secrets.PC_PATH }}
 
 #    -
 #      name: Deploy on Data PC
