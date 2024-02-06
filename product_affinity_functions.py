@@ -1,4 +1,4 @@
-import hdbscan
+# import hdbscan
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -86,31 +86,31 @@ def kmeans_model(features, mode, nb_clusters):
     return
 
 
-def hdbscan_model(features, mode):
-    hdb = hdbscan.HDBSCAN(gen_min_span_tree=True).fit(features)
-    param_dist = {'min_cluster_size': [10, 25, 50, 75, 100, 150, 200]}
-    validity_scorer = make_scorer(hdbscan.validity.validity_index, greater_is_better=True)
-    n_iter_search = 20
-    random_search = RandomizedSearchCV(hdb, param_distributions=param_dist
-                                       , n_iter=n_iter_search
-                                       , scoring=validity_scorer
-                                       , random_state=42)
-    random_search.fit(features)
-    st.write('Hyperparameter Tuning (Best Parameters) : ')
-    st.write(f"Min cluster size : {random_search.best_params_['min_cluster_size']}")
-    st.write(f"DBCV score : {round(random_search.best_estimator_.relative_validity_, 2)}")
-
-    model = hdbscan.HDBSCAN(min_cluster_size=random_search.best_params_['min_cluster_size'])
-    pred = model.fit_predict(features)
-    st.write(f"=> Number of optimal clusters : {len(np.unique(model.labels_))}")
-    if mode == 'umap':
-        features['cluster'] = pred
-        show_umap(features)
-    elif mode == 'radar':
-        features['cluster'] = pred + 1
-        show_radar_plot(features)
-    return
-
+# def hdbscan_model(features, mode):
+#     hdb = hdbscan.HDBSCAN(gen_min_span_tree=True).fit(features)
+#     param_dist = {'min_cluster_size': [10, 25, 50, 75, 100, 150, 200]}
+#     validity_scorer = make_scorer(hdbscan.validity.validity_index, greater_is_better=True)
+#     n_iter_search = 20
+#     random_search = RandomizedSearchCV(hdb, param_distributions=param_dist
+#                                        , n_iter=n_iter_search
+#                                        , scoring=validity_scorer
+#                                        , random_state=42)
+#     random_search.fit(features)
+#     st.write('Hyperparameter Tuning (Best Parameters) : ')
+#     st.write(f"Min cluster size : {random_search.best_params_['min_cluster_size']}")
+#     st.write(f"DBCV score : {round(random_search.best_estimator_.relative_validity_, 2)}")
+#
+#     model = hdbscan.HDBSCAN(min_cluster_size=random_search.best_params_['min_cluster_size'])
+#     pred = model.fit_predict(features)
+#     st.write(f"=> Number of optimal clusters : {len(np.unique(model.labels_))}")
+#     if mode == 'umap':
+#         features['cluster'] = pred
+#         show_umap(features)
+#     elif mode == 'radar':
+#         features['cluster'] = pred + 1
+#         show_radar_plot(features)
+#     return
+#
 
 def agglomerative_model(features, mode, nb_clusters):
     Z = linkage(features, 'ward')
@@ -143,8 +143,8 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
     if product_model_name == 'Kmeans':
         nb_clusters_product = st.slider('Number of product clusters', 2, 11, 4)
         kmeans_model(product_features, 'umap', nb_clusters_product)
-    elif product_model_name == 'HDBScan':
-        hdbscan_model(product_features, 'umap')
+    # elif product_model_name == 'HDBScan':
+    #     hdbscan_model(product_features, 'umap')
     else:
         nb_clusters_product = st.number_input('How many product clusters do you want ?', value=5)
         agglomerative_model(product_features, 'umap', nb_clusters_product)
@@ -156,8 +156,8 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
     if category_model_name == 'Kmeans':
         nb_clusters_category = st.slider('Number of category clusters', 2, 11, 4)
         kmeans_model(category_features, 'radar', nb_clusters_category)
-    elif category_model_name == 'HDBScan':
-        hdbscan_model(category_features, 'radar')
+    # elif category_model_name == 'HDBScan':
+    #     hdbscan_model(category_features, 'radar')
     else:
         nb_clusters_category = st.number_input('How many category clusters do you want ?', value=5)
         agglomerative_model(category_features, 'radar', nb_clusters_category)

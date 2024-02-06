@@ -15,6 +15,7 @@ def get_info(rfm, customer_id, scaler, kmeans):
     customer_segment_1 = rfm[rfm['Customer_ID'] == customer_id]['Segment 1']
     customer_segment_2 = rfm[rfm['Customer_ID'] == customer_id]['Segment 2']
 
+
     return customer_cluster, customer_segment_1, customer_segment_2
 
 

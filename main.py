@@ -9,6 +9,7 @@ from most_frequent_pattern import most_frequent_pattern_main_function
 from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
 from customer_overview_functions import customer_overview_data_function
+from map import create_map
 # from map_function import map_function
 
 st.set_page_config(page_title="Customer Portrait", layout="wide")
@@ -38,7 +39,7 @@ with st.sidebar:
 address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(
     snapshot_start_date, snapshot_end_date, directory)
 
-home_tab, rfm_seg_tab, mba_tab, customer_tab = st.tabs(["Home", "RFM Segmentation", "MBA", "Customer Overview"])
+home_tab, rfm_seg_tab, mba_tab, customer_tab, map_tab = st.tabs(["Home", "RFM Segmentation", "MBA", "Customer Overview", "Map"])
 
 if sales_filter == "***Invoice***":
     df_sales = invoices[(invoices['Paid'] == 1) & (invoices['Total_price'] > 0) & (invoices['Customer_ID'] is not None)]
@@ -80,6 +81,9 @@ if not df_sales.empty and not df_lines.empty:
                 customer_overview_data_function(rfm, df_sales, df_lines, transformed_sales_filter)
             with customers_data_tab:
                 customer_overview_data_function(rfm, df_sales, df_lines, transformed_sales_filter, show_full_dataframe=True)
+
+    with map_tab:
+        create_map(address, 'City', 'Customer_Count', 'Customer')
 else:
     st.error("No data available for the selected time period !")
 
