@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-    customer-portrait:
-        image: ${IMAGE}:${TAG}
+    app:
+        image: ${IMAGE}/etude-client/streamlit/runtime:${TAG}
         volumes:
             - ${PATH}:/app/data
         ports:
