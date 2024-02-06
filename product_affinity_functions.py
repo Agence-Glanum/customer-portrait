@@ -69,7 +69,7 @@ def show_radar_plot(categorie_features):
             name='Cluster ' + str(i)
         ))
     st.write(fig)
-    return
+    return fig
 
 
 def kmeans_model(features, mode, nb_clusters):
@@ -83,7 +83,7 @@ def kmeans_model(features, mode, nb_clusters):
         show_umap(features)
     elif mode == 'radar':
         show_radar_plot(features)
-    return
+    return features
 
 
 def hdbscan_model(features, mode):
@@ -109,7 +109,7 @@ def hdbscan_model(features, mode):
     elif mode == 'radar':
         features['cluster'] = pred + 1
         show_radar_plot(features)
-    return
+    return features
 
 
 def agglomerative_model(features, mode, nb_clusters):
@@ -126,7 +126,7 @@ def agglomerative_model(features, mode, nb_clusters):
         show_umap(features)
     elif mode == 'radar':
         show_radar_plot(features)
-    return
+    return features
 
 
 def prod_aff_main_function(df_sales, df_lines, categories, products, directory, snapshot_start_date, snapshot_end_date,
