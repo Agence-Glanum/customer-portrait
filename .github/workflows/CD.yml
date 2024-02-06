@@ -69,4 +69,5 @@ jobs:
         username: ${{ secrets.PC_USER }}
         password: ${{ secrets.PC_PASSWORD }}
         script: |
+
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} ${{ secrets.NEXUS_HOST }} && docker pull ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }} && docker run -d --mount type=bind,source=${{ secrets.PC_DATA_PATH }},target=/app/data/ -p 8501:8501 --name customer-portrait ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}

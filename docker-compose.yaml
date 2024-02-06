@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+    app:
+        build: ./
+        command: streamlit run app/main.py --server.port 8501
+        volumes:
+            - ./:/app
+        ports:
+            - "8501:8501"
+        image: streamlit:latest
+
+    nginx:
+        image: nginx:latest
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        volumes:
+            - ./nginx.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - app
