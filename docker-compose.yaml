@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-    app:
+    streamlit:
         image: ${IMAGE}/etude-client/streamlit/runtime:${TAG}
         volumes:
             - ${PATH}:/app/data
@@ -16,4 +16,4 @@ services:
         volumes:
             - ./nginx.conf:/etc/nginx/conf.d/default.conf
         depends_on:
-            - app
+            - streamlit
