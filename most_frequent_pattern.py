@@ -25,9 +25,9 @@ def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0
 
     # apriori_res['length'] = apriori_res['itemsets'].apply(lambda x: len(x))
     # heatmap_data = apriori_res[apriori_res['length'] == 2].drop(['length'], axis=1)
-    # heatmap_data['Item1'] = heatmap_data['itemsets'].apply(lambda x: list(x)[0])
-    # heatmap_data['Item2'] = heatmap_data['itemsets'].apply(lambda x: list(x)[1])
-    # heatmap_data = heatmap_data.pivot(index='Item1', columns='Item2', values='support').fillna(0)
+    # heatmap_data['Item 1'] = heatmap_data['itemsets'].apply(lambda x: list(x)[0])
+    # heatmap_data['Item 2'] = heatmap_data['itemsets'].apply(lambda x: list(x)[1])
+    # heatmap_data = heatmap_data.pivot(index='Item 1', columns='Item 2', values='support').fillna(0)
     # st.write(px.imshow(heatmap_data))
 
     st.subheader('Association rules')
@@ -38,8 +38,10 @@ def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0
     rules['antecedents_'] = rules['antecedents'].apply(lambda a: ','.join(list(a)))
     rules['consequents_'] = rules['consequents'].apply(lambda a: ','.join(list(a)))
 
-    pivot = rules.pivot(index='antecedents_', columns='consequents_', values=metric)
-    st.write(px.imshow(pivot[:5]))
+    pivot = rules[(rules['antecedents items'] == 1) & (rules['consequents items'] == 1)].pivot(index='antecedents_',
+                                                                                               columns='consequents_',
+                                                                                               values=metric)
+    st.write(px.imshow(pivot))
     return apriori_res, rules
 
 
@@ -51,14 +53,17 @@ def fpgrowth_approach(df, min_support=0.001, metric='lift', min_threshold=0.01):
     st.write(px.bar(x=bar_data['itemsets'], y=bar_data['support'], labels={'x': 'Product', 'y': 'Support value'}))
 
     st.subheader('Association rules')
-    rules = association_rules(fpgrowth_res, metric=metric, min_threshold=min_threshold)
+    rules = association_rules(fpgrowth_res, metric=metric, min_threshold=min_threshold).sort_values(by='confidence',
+                                                                                                    ascending=False)
     rules['antecedents items'] = rules['antecedents'].apply(lambda x: len(x))
     rules['consequents items'] = rules['consequents'].apply(lambda x: len(x))
     rules['antecedents_'] = rules['antecedents'].apply(lambda a: ','.join(list(a)))
     rules['consequents_'] = rules['consequents'].apply(lambda a: ','.join(list(a)))
 
-    pivot = rules.pivot(index='antecedents_', columns='consequents_', values=metric)
-    st.write(px.imshow(pivot[:5]))
+    pivot = rules[(rules['antecedents items'] == 1) & (rules['consequents items'] == 1)].pivot(index='antecedents_',
+                                                                                               columns='consequents_',
+                                                                                               values=metric)
+    st.write(px.imshow(pivot))
     return fpgrowth_res, rules
 
 
@@ -68,7 +73,7 @@ def most_frequent_pattern_main_function(df_lines, products, transformed_sales_fi
     col1, col2, col3 = st.columns(3)
     min_support = col1.number_input('Insert min support', value=0.001, format='%f')
     metric = col2.selectbox('Which metric do you choose ?',
-                          ('confidence', 'lift'))
+                            ('confidence', 'lift'))
     min_threshold = col3.number_input('Insert min threshold', value=0.01, format='%f')
 
     with st.expander("See explanation"):
