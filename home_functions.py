@@ -5,8 +5,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 
-def show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date, directory, transformed_sales_filter):
-    st.subheader(f"KPIS for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]", divider='grey')
+def show_kpis(invoices, orders, categories, products):
     col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric("Customers", invoices['Customer_ID'].nunique())
@@ -24,45 +23,48 @@ def show_eda(invoices, orders, customers, products, categories, snapshot_start_d
     col5.metric("Minimum orders Value", str(round(orders['Total_price'].min(), 2)) + "")
     col5.metric("Maximum orders Value", str(round(orders['Total_price'].max(), 2)) + "")
 
-    # invoices['Invoice_date'] = pd.to_datetime(invoices['Invoice_date']).dt.normalize()
-    # orders['Order_date'] = pd.to_datetime(orders['Order_date']).dt.normalize()
-    #
-    # line_chart_invoice_data = invoices.groupby('Invoice_date').Invoice_ID.nunique()
-    # line_chart_order_data = orders.groupby('Order_date').Order_ID.nunique()
-    #
-    # st.subheader('Sales and Orders evolution through time', divider='grey')
-    # fig = go.Figure()
-    # fig.add_trace(go.Scatter(x=line_chart_invoice_data.index, y=invoices['Total_price'].values,
-    #                          name='Invoices'))
-    # fig.add_trace(go.Scatter(x=line_chart_order_data.index, y=orders['Total_price'].values,
-    #                          name='Orders'))
-    # st.plotly_chart(fig, use_container_width=True)
+    return
 
-    ################################
-    line_chart_invoices = pd.read_csv(f"./data/{directory}/invoices.csv")
-    line_chart_orders = pd.read_csv(f"./data/{directory}/orders.csv")
 
-    line_chart_invoices['Invoice_date'] = pd.to_datetime(line_chart_invoices['Invoice_date']).dt.normalize()
-    line_chart_orders['Order_date'] = pd.to_datetime(line_chart_orders['Order_date']).dt.normalize()
+def show_boxplot(invoices, orders):
+    fig = make_subplots(rows=1, cols=1)
 
-    line_chart_invoice_data = line_chart_invoices.groupby('Invoice_date').Invoice_ID.nunique()
-    line_chart_order_data = line_chart_orders.groupby('Order_date').Order_ID.nunique()
-    min_date = min(line_chart_invoice_data.index.min(), line_chart_order_data.index.min())
-    max_date = max(line_chart_invoice_data.index.max(), line_chart_order_data.index.max())
-    st.subheader(f"Sales and Orders evolution through time for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]", divider='grey')
+    fig.add_trace(go.Box(x=invoices['Total_price'], name='Invoices'))
+    fig.add_trace(go.Box(x=orders['Total_price'], name='Orders'))
+    fig.update_layout(xaxis_title='Monetary value')
+    fig.update_layout(showlegend=True)
 
+    st.plotly_chart(fig, use_container_width=True)
+
+    return
+
+
+def show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date):
+    invoices['Invoice_date'] = pd.to_datetime(invoices['Invoice_date']).dt.normalize()
+    orders['Order_date'] = pd.to_datetime(orders['Order_date']).dt.normalize()
+
+    min_date = min(invoices['Invoice_date'].min(), orders['Order_date'].min())
+    max_date = max(invoices['Invoice_date'].max(), orders['Order_date'].max())
+
+    min_value = min(invoices['Total_price'].min(), orders['Total_price'].min())
+    max_value = max(invoices['Total_price'].max(), orders['Total_price'].max())
+
+    paid_invoices = invoices[(invoices['Paid'] == 1) & (invoices['Total_price'] > 0)]
+    unpaid_invoices = invoices[(invoices['Paid'] == 0) & (invoices['Total_price'] > 0)]
+    valid_orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled') & (orders['Total_price'] > 0)]
+    invalid_orders = orders[(orders['Status'] == 'draft') | (orders['Status'] == 'cancelled') & (orders['Total_price'] > 0)]
 
     fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=line_chart_invoices['Invoice_date'], y=line_chart_invoices['Total_price'].values,
-                              name='Invoices'))
-    fig2.add_trace(go.Scatter(x=line_chart_orders['Order_date'], y=line_chart_orders['Total_price'].values,
-                              name='Orders'))
-    #
+    fig2.add_trace(go.Scatter(x=paid_invoices['Invoice_date'], y=paid_invoices['Total_price'], name='Paid Invoices', line=dict(color="blue")))
+    fig2.add_trace(go.Scatter(x=unpaid_invoices['Invoice_date'], y=unpaid_invoices['Total_price'], name='Unpaid Invoices', line=dict(color="red")))
+    fig2.add_trace(go.Scatter(x=valid_orders['Order_date'], y=valid_orders['Total_price'], name='Valid Orders', line=dict(color="green")))
+    fig2.add_trace(go.Scatter(x=invalid_orders['Order_date'], y=invalid_orders['Total_price'], name='Invalid Orders', line=dict(color="pink")))
+    fig2.update_layout(xaxis_title='Date', yaxis_title='Monetary value')
     fig2.add_shape(type='rect',
                    x0=snapshot_start_date,
                    x1=snapshot_end_date,
-                   y0=line_chart_orders['Total_price'].min(),
-                   y1=line_chart_orders['Total_price'].max(),
+                   y0=min_value,
+                   y1=max_value,
                    fillcolor="lightblue",
                    opacity=0.5,
                    layer="below",
@@ -71,24 +73,32 @@ def show_eda(invoices, orders, customers, products, categories, snapshot_start_d
 
     st.plotly_chart(fig2, use_container_width=True)
 
-    #####################################
 
-    st.subheader(f"Customer type distribution for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]", divider='grey')
-    fig = px.histogram(customers, x='Customer_type')
+def show_customer_types(customers):
+    fig = px.histogram(x=customers['Customer_type'], labels={'x': 'Customer type'})
     st.plotly_chart(fig, use_container_width=True)
 
-    invoices_reset = invoices.reset_index(drop=True)
-    orders_reset = orders.reset_index(drop=True)
+    return
 
-    st.subheader(f"Minimum/Maximum invoices and orders value for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]", divider='grey')
 
-    fig = make_subplots(rows=1, cols=1)
+def show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date, directory,
+             transformed_sales_filter):
+    st.subheader(
+        f"KPIs for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]",
+        divider='grey')
+    show_kpis(invoices, orders, categories, products)
 
-    fig.add_trace(go.Box(x=invoices_reset['Total_price'], pointpos=0, name='Invoices'))
-    fig.add_trace(go.Box(x=orders_reset['Total_price'], pointpos=0, name='Orders'))
+    st.subheader(
+        f"Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]",
+        divider='grey')
+    st.write('Timeline of Sales and Orders')
+    show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date)
+    st.write('Boxplot for both Sales and Orders')
+    show_boxplot(invoices, orders)
 
-    fig.update_layout(showlegend=True)
-
-    st.plotly_chart(fig, use_container_width=True)
+    st.subheader(
+        f"Customer details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
+        divider='grey')
+    show_customer_types(customers)
 
     return
