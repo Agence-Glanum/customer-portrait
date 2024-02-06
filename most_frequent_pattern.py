@@ -33,13 +33,14 @@ def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0
     st.subheader('Association rules')
     rules = association_rules(apriori_res, metric=metric, min_threshold=min_threshold).sort_values(by='confidence',
                                                                                                    ascending=False)
-    rules['lhs items'] = rules['antecedents'].apply(lambda x: len(x))
+    rules['antecedents items'] = rules['antecedents'].apply(lambda x: len(x))
+    rules['consequents items'] = rules['consequents'].apply(lambda x: len(x))
     rules['antecedents_'] = rules['antecedents'].apply(lambda a: ','.join(list(a)))
     rules['consequents_'] = rules['consequents'].apply(lambda a: ','.join(list(a)))
 
     pivot = rules.pivot(index='antecedents_', columns='consequents_', values=metric)
     st.write(px.imshow(pivot[:5]))
-    return
+    return apriori_res, rules
 
 
 def fpgrowth_approach(df, min_support=0.001, metric='lift', min_threshold=0.01):
@@ -51,13 +52,14 @@ def fpgrowth_approach(df, min_support=0.001, metric='lift', min_threshold=0.01):
 
     st.subheader('Association rules')
     rules = association_rules(fpgrowth_res, metric=metric, min_threshold=min_threshold)
-    rules['lhs items'] = rules['antecedents'].apply(lambda x: len(x))
+    rules['antecedents items'] = rules['antecedents'].apply(lambda x: len(x))
+    rules['consequents items'] = rules['consequents'].apply(lambda x: len(x))
     rules['antecedents_'] = rules['antecedents'].apply(lambda a: ','.join(list(a)))
     rules['consequents_'] = rules['consequents'].apply(lambda a: ','.join(list(a)))
 
     pivot = rules.pivot(index='antecedents_', columns='consequents_', values=metric)
     st.write(px.imshow(pivot[:5]))
-    return
+    return fpgrowth_res, rules
 
 
 def most_frequent_pattern_main_function(df_lines, products, transformed_sales_filter):
@@ -83,10 +85,9 @@ def most_frequent_pattern_main_function(df_lines, products, transformed_sales_fi
             "***Zhang's metric ->*** measure designed to assess the strength of association (positive or negative) between two items, taking into account both their co-occurrence and their non-co-occurrence.")
 
     st.header('First approach - Apriori')
-    apriori_approach(df, min_support, metric, min_threshold)
+    apriori_mfp, apriori_rules = apriori_approach(df, min_support, metric, min_threshold)
 
     st.header('Second approach - FP growth')
-    fpgrowth_approach(df, min_support, metric, min_threshold)
+    fpgrowth_mfp, fpgrowth_rules = fpgrowth_approach(df, min_support, metric, min_threshold)
 
-
-    return
+    return apriori_rules, fpgrowth_rules

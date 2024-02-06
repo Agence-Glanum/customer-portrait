@@ -1,6 +1,6 @@
 import datetime
 import streamlit as st
-from categories_tree import categories_tree
+from categories_tree import show_data
 from customer_overview_functions import customer_overview_main_function
 from home_functions import show_eda
 from product_affinity_functions import prod_aff_main_function
@@ -9,6 +9,7 @@ from most_frequent_pattern import most_frequent_pattern_main_function
 from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
 from customer_overview_functions import customer_overview_data_function
+from next_product_prediction import next_prod_pred_main_function
 # from map_function import map_function
 
 st.set_page_config(page_title="Customer Portrait", layout="wide")
@@ -63,12 +64,14 @@ if not df_sales.empty and not df_lines.empty:
         with prod_aff_tab:
             prod_aff_main_function(df_sales, df_lines, categories, products, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
         with most_freq_tab:
-            most_frequent_pattern_main_function(df_lines, products, transformed_sales_filter)
+            apriori_rules, fpgrowth_rules = most_frequent_pattern_main_function(df_lines, products, transformed_sales_filter)
+        with product_pred_tab:
+            next_prod_pred_main_function(apriori_rules, fpgrowth_rules, products)
         with data_tab:
             st.subheader(
                     f"Categories details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]",
                     divider='grey')
-            st.dataframe(categories_tree(categories, products, directory), use_container_width=True)
+            show_data(categories, products)
 
     with customer_tab:
         overview_tab, data_tab = st.tabs(["Customer overview", "Data"])
