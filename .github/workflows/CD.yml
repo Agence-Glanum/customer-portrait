@@ -53,15 +53,6 @@ jobs:
         echo "${{ secrets.VPN_PWD }}" | sudo openconnect -u ${{ secrets.VPN_USER }} --passwd-on-stdin --protocol=fortinet ${{ secrets.VPN_HOST }}:${{ secrets.VPN_PORT }} --servercert ${{ secrets.VPN_SERVERCERT }} &
 
     -
-      name: Get and remove old docker image
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.PC_HOST }}
-        username: ${{ secrets.PC_USER }}
-        password: ${{ secrets.PC_PASSWORD }}
-        script: |
-          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1
-    -
       name: Deploy on Data PC
       uses: appleboy/ssh-action@master
       with:
@@ -69,5 +60,4 @@ jobs:
         username: ${{ secrets.PC_USER }}
         password: ${{ secrets.PC_PASSWORD }}
         script: |
-
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} ${{ secrets.NEXUS_HOST }} && docker pull ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }} && docker run -d --mount type=bind,source=${{ secrets.PC_DATA_PATH }},target=/app/data/ -p 8501:8501 --name customer-portrait ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}
+          powershell -ExecutionPolicy Bypass -File docker-cleanup.ps1 ${{ secrets.NEXUS_HOST }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }}
