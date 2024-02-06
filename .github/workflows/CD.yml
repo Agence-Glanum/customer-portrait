@@ -20,18 +20,17 @@ jobs:
       name: Get latest git tag
       run: echo "LATEST_TAG=$(git describe --tags --abbrev=7)" >> $GITHUB_ENV
 
-#    -
-#      name: Build and push Docker image
-#      env:
-#        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-#        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-#        NEXUS_HOST: ${{ secrets.NEXUS_HOST }}
-#      run: |
-#        docker build -t runtime:${{ env.LATEST_TAG }} .
-#        docker login "$NEXUS_HOST" -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-#        docker tag runtime:${{ env.LATEST_TAG }} ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}
-#        docker push ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}
-
+    -
+      name: Build and push Docker image
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        NEXUS_HOST: ${{ secrets.NEXUS_HOST }}
+      run: |
+        docker build -t runtime:${{ env.LATEST_TAG }} .
+        docker login "$NEXUS_HOST" -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+        docker tag runtime:${{ env.LATEST_TAG }} ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}
+        docker push ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -51,20 +50,12 @@ jobs:
       run: |
         sudo apt-get install openconnect network-manager-openconnect network-manager-openconnect-gnome
         echo "${{ secrets.VPN_PWD }}" | sudo openconnect -u ${{ secrets.VPN_USER }} --passwd-on-stdin --protocol=fortinet ${{ secrets.VPN_HOST }}:${{ secrets.VPN_PORT }} --servercert ${{ secrets.VPN_SERVERCERT }} &
-
     -
-      name: Copy files to Data PC
-      run: |
-        sudo apt-get install -y sshpass
-        ls -l
-        cat Dockerfile | sshpass -p "${{ secrets.PC_PASSWORD }}" ssh -o StrictHostKeyChecking=no -p 22 ${{ secrets.PC_USER }}@${{ secrets.PC_HOST }} "cat > ${{ secrets.PC_PATH }}/Dockerfile"
-
-#    -
-#      name: Deploy on Data PC
-#      uses: appleboy/ssh-action@master
-#      with:
-#        host: ${{ secrets.PC_HOST }}
-#        username: ${{ secrets.PC_USER }}
-#        password: ${{ secrets.PC_PASSWORD }}
-#        script: |
-#          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1 ${{ secrets.NEXUS_HOST }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }}
+      name: Deploy on Data PC
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.PC_HOST }}
+        username: ${{ secrets.PC_USER }}
+        password: ${{ secrets.PC_PASSWORD }}
+        script: |
+          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1 ${{ secrets.NEXUS_HOST }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }}
