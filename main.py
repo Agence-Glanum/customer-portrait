@@ -83,7 +83,7 @@ if not df_sales.empty and not df_lines.empty:
                 customer_overview_data_function(rfm, df_sales, df_lines, transformed_sales_filter, show_full_dataframe=True)
 
     with map_tab:
-        create_map(address, 'City', 'Customer_Count', 'Customer')
+        create_map(address, 'Zip_code', 'Customer_Count', 'Nombre de Clients')
 else:
     st.error("No data available for the selected time period !")
 
