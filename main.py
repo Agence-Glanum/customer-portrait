@@ -39,7 +39,7 @@ with st.sidebar:
 address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(
     snapshot_start_date, snapshot_end_date, directory)
 
-home_tab, rfm_seg_tab, mba_tab, customer_tab, map_tab = st.tabs(["Home", "RFM Segmentation", "MBA", "Customer Overview", "Map"])
+home_tab, rfm_seg_tab, mba_tab, customer_tab, map_tab = st.tabs(["Home", "RFM Segmentation", "MBA", "Customer Overview", "Geodemographic profiling"])
 
 if sales_filter == "***Invoice***":
     df_sales = invoices[(invoices['Paid'] == 1) & (invoices['Total_price'] > 0) & (invoices['Customer_ID'] is not None)]
