@@ -47,8 +47,13 @@ def get_dates(directory):
     return DATE_MIN, DATE_MAX
 
 
-def filter_data(snapshot_start_date, snapshot_end_date, directory):
-    address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
+def filter_data(client_type, snapshot_start_date, snapshot_end_date, directory):
+    addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
+
+    customers = customers[customers['Customer_type'] == client_type]
+    addresses = addresses[addresses['Customer_ID'].isin(customers['Customer_ID'])]
+    invoices = invoices[invoices['Customer_ID'].isin(customers['Customer_ID'])]
+    orders = orders[orders['Customer_ID'].isin(customers['Customer_ID'])]
 
     start_date = datetime.datetime(snapshot_start_date.year, snapshot_start_date.month, snapshot_start_date.day)
     end_date = datetime.datetime(snapshot_end_date.year, snapshot_end_date.month, snapshot_end_date.day)
@@ -56,4 +61,4 @@ def filter_data(snapshot_start_date, snapshot_end_date, directory):
     invoices = invoices[(invoices['Invoice_date'] >= start_date) & (invoices['Invoice_date'] <= end_date)]
     orders = orders[(orders['Order_date'] >= start_date) & (orders['Order_date'] <= end_date)]
 
-    return address, categories, customer, invoices, invoices_lines, orders, orders_lines, products
+    return addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products

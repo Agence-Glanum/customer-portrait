@@ -67,27 +67,22 @@ def fpgrowth_approach(df, min_support=0.001, metric='lift', min_threshold=0.01):
     return fpgrowth_res, rules
 
 
-def most_frequent_pattern_main_function(df_lines, products, transformed_sales_filter):
+def most_frequent_pattern_main_function(df_lines, products, categories, transformed_sales_filter):
     df = clean_data(df_lines, products, transformed_sales_filter)
 
     col1, col2, col3 = st.columns(3)
     min_support = col1.number_input('Insert min support', value=0.001, format='%f')
     metric = col2.selectbox('Which metric do you choose ?',
-                            ('confidence', 'lift'))
+                            ('confidence', 'lift', 'support', 'leverage', 'conviction', 'zhangs_metric'))
     min_threshold = col3.number_input('Insert min threshold', value=0.01, format='%f')
 
     with st.expander("See explanation"):
-        st.write(
-            "***Support Value ->*** indicates the rate of seeing antecedent and consequent together in all purchases.")
+        st.write("***Support Value ->*** indicates the rate of seeing antecedent and consequent together in all purchases.")
         st.write("***Confidence Value ->*** shows the percentage of customers who buy antecedent also buy consequent.")
-        st.write(
-            "***Lift Value ->*** shows by how much the sales of consequent increase for purchases with antecedent.")
-        st.write(
-            "***Leverage Value ->*** quantifies how much the occurrence of antecedent and consequent together deviates from what would be expected by chance.")
-        st.write(
-            "***Conviction Value ->*** quantifies how much the presence of antecedent implies the absence of consequent.")
-        st.write(
-            "***Zhang's metric ->*** measure designed to assess the strength of association (positive or negative) between two items, taking into account both their co-occurrence and their non-co-occurrence.")
+        st.write("***Lift Value ->*** shows by how much the sales of consequent increase for purchases with antecedent.")
+        st.write("***Leverage Value ->*** quantifies how much the occurrence of antecedent and consequent together deviates from what would be expected by chance.")
+        st.write("***Conviction Value ->*** quantifies how much the presence of antecedent implies the absence of consequent.")
+        st.write("***Zhang's metric ->*** measure designed to assess the strength of association (positive or negative) between two items, taking into account both their co-occurrence and their non-co-occurrence.")
 
     st.header('First approach - Apriori')
     apriori_mfp, apriori_rules = apriori_approach(df, min_support, metric, min_threshold)

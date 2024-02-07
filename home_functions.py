@@ -74,13 +74,6 @@ def show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date):
     st.plotly_chart(fig2, use_container_width=True)
 
 
-def show_customer_types(customers):
-    fig = px.histogram(x=customers['Customer_type'], labels={'x': 'Customer type'})
-    st.plotly_chart(fig, use_container_width=True)
-
-    return
-
-
 def show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date, directory,
              transformed_sales_filter):
     st.subheader(
@@ -95,10 +88,5 @@ def show_eda(invoices, orders, customers, products, categories, snapshot_start_d
     show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date)
     st.write('Boxplot for both Sales and Orders')
     show_boxplot(invoices, orders)
-
-    st.subheader(
-        f"Customer details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
-        divider='grey')
-    show_customer_types(customers)
 
     return
