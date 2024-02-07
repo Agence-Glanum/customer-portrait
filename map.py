@@ -15,7 +15,7 @@ def clean_data(address):
     return df
 
 def map_geodataframe(address):
-    geojson_path = os.path.abspath('data/Geo/contour-des-departements.geojson')
+    geojson_path = os.path.abspath('utils/GeoJson/contour-des-departements.geojson')
 
     with open(geojson_path, 'r') as jsonFile:
         data = json.load(jsonFile)
