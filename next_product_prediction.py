@@ -18,11 +18,9 @@ def next_prod_pred_main_function(apriori_rules, fpgrowth_rules, products):
 
     st.header('Product recommendation', divider='grey')
     st.subheader('First approach - Apriori')
-    st.dataframe(apriori_rules)
     st.write(recommend_product(apriori_rules, product))
 
     st.subheader('Second approach - FP growth')
-    st.dataframe(fpgrowth_rules)
     st.write(recommend_product(fpgrowth_rules, product))
 
     return
