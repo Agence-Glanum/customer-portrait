@@ -1,34 +1,12 @@
-# import os
 import datetime
 import pandas as pd
-# import sqlalchemy as db
-
-# DB_USERNAME = os.getenv("DB_USERNAME")
-# DB_PASSWORD = os.getenv("DB_PASSWORD")
-# DB_HOST = os.getenv("DB_HOST")
-# DB_NAME = os.getenv("DB_NAME")
-#
-# connection_string = f"mssql+pyodbc://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/
-# {DB_NAME}?driver=ODBC+Driver+17+for+SQL+Server"
-#
-# engine = db.create_engine(connection_string)
-#
-#
-# def get_data_from_db(query):
-#     return pd.read_sql_query(query, engine)
 
 
 def get_data_from_csv(directory):
     path = './data/Glanum/' if directory == 'Glanum' else './data/IciStore/'
-    address = pd.read_csv(f'{path}/Addresses.csv')
-    categories = pd.read_csv(f'{path}/Categories.csv')
-    customer = pd.read_csv(f'{path}/Customers.csv')
-    invoices = pd.read_csv(f'{path}/Invoices.csv')
-    invoices_lines = pd.read_csv(f'{path}/Invoice_lines.csv')
-    orders = pd.read_csv(f'{path}/Orders.csv')
-    orders_lines = pd.read_csv(f'{path}/Order_lines.csv')
-    products = pd.read_csv(f'{path}/Products.csv')
-    return address, categories, customer, invoices, invoices_lines, orders, orders_lines, products
+    csv_files = ['Addresses', 'Categories', 'Customers', 'Invoices', 'Invoice_lines', 'Orders', 'Order_lines',
+                 'Products']
+    return tuple(pd.read_csv(f'{path}/{file}.csv') for file in csv_files)
 
 
 def transform_data(directory):
@@ -51,7 +29,8 @@ def get_dates(directory):
 
 
 def filter_data(client_type, snapshot_start_date, snapshot_end_date, directory):
-    addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
+    (addresses, categories, customers, invoices, invoices_lines, orders,
+     orders_lines, products) = transform_data(directory)
 
     customers = customers[customers['Customer_type'] == client_type]
     addresses = addresses[addresses['Customer_ID'].isin(customers['Customer_ID'])]
@@ -61,7 +40,7 @@ def filter_data(client_type, snapshot_start_date, snapshot_end_date, directory):
     start_date = datetime.datetime(snapshot_start_date.year, snapshot_start_date.month, snapshot_start_date.day)
     end_date = datetime.datetime(snapshot_end_date.year, snapshot_end_date.month, snapshot_end_date.day)
 
-    invoices = invoices[(invoices['Invoice_date'] >= start_date) & (invoices['Invoice_date'] <= end_date)]
-    orders = orders[(orders['Order_date'] >= start_date) & (orders['Order_date'] <= end_date)]
+    invoices = invoices[invoices['Invoice_date'].between(start_date, end_date)]
+    orders = orders[orders['Order_date'].between(start_date, end_date)]
 
     return addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products
