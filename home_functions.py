@@ -77,8 +77,8 @@ def show_eda(invoices, orders, customers, products, categories, snapshot_start_d
     show_kpis(invoices, orders, categories, products)
 
     st.subheader(
-        f'Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
-        divider='grey')
+        f'Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] '
+        f'to :blue[{snapshot_end_date}]', divider='grey')
     st.write('Timeline of Sales and Orders')
     show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date)
     st.write('Boxplot for both Sales and Orders')
