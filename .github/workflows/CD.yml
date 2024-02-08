@@ -28,8 +28,8 @@ jobs:
       run: |
         docker build -t runtime:${{ env.LATEST_TAG }} .
         docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-        docker tag runtime:${{ env.LATEST_TAG }} ${{ secrets.REPOSITORY }}/etude-client-runtime:${{ env.LATEST_TAG }}
-        docker push ${{ secrets.REPOSITORY }}/etude-client-runtime:${{ env.LATEST_TAG }}
+        docker tag runtime:${{ env.LATEST_TAG }} ${{ secrets.DEPOSITORY }}/etude-client-runtime:${{ env.LATEST_TAG }}
+        docker push ${{ secrets.DEPOSITORY }}/etude-client-runtime:${{ env.LATEST_TAG }}
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -57,4 +57,4 @@ jobs:
         username: ${{ secrets.PC_USER }}
         password: ${{ secrets.PC_PASSWORD }}
         script: |
-          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1 ${{ secrets.PC_PATH }} ${{ secrets.REPOSITORY }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }} ${{ secrets.ENV_PATH}} ${{ secrets.DATA_USERNAME}} ${{ secrets.DATA_PASSWORD}} ${{ secrets.MARKETING_USERNAME}} ${{ secrets.MARKETING_PASSWORD}}
+          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1 ${{ secrets.PC_PATH }} ${{ secrets.DEPOSITORY }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }} ${{ secrets.ENV_PATH}} ${{ secrets.DATA_USERNAME}} ${{ secrets.DATA_PASSWORD}} ${{ secrets.MARKETING_USERNAME}} ${{ secrets.MARKETING_PASSWORD}}
