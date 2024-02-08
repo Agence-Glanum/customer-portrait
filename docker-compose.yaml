@@ -2,9 +2,11 @@ version: '3'
 
 services:
     streamlit:
-        image: ${IMAGE}/etude-client/streamlit/runtime:${TAG}
+        image: ${IMAGE}/etude-client-runtime:${TAG}
         volumes:
             - ${PATH}:/app/data
+        env_file:
+            - ${ENV_PATH}
         ports:
             - "8501:8501"
 
