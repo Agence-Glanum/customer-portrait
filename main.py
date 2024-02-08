@@ -2,7 +2,7 @@ import os
 import datetime
 import streamlit as st
 from dotenv import load_dotenv
-from categories_tree import show_data
+from mba import show_mba
 from customer_overview_functions import customer_overview_main_function
 from home_functions import show_eda
 from product_affinity_functions import prod_aff_main_function
@@ -87,21 +87,22 @@ def data_main():
                 mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
                                              snapshot_end_date, directory, sales_filter)
             with prod_aff_tab:
-                prod_aff_main_function(df_sales, df_lines, categories, products, directory, snapshot_start_date,
-                                       snapshot_end_date, sales_filter)
+                product_clusters, category_clusters = prod_aff_main_function(df_sales, df_lines, categories, products,
+                                                                             directory, snapshot_start_date,
+                                                                             snapshot_end_date, sales_filter)
             with most_freq_tab:
                 apriori_rules, fpgrowth_rules = most_frequent_pattern_main_function(df_lines, products, categories,
                                                                                     sales_filter)
             with product_pred_tab:
                 next_prod_pred_main_function(apriori_rules, fpgrowth_rules, products)
             with data_tab:
-
-                show_data(categories, products, directory, snapshot_start_date, snapshot_end_date)
+                show_mba(directory, products, product_clusters, category_clusters)
 
         with customer_tab:
             overview_tab, data_tab = st.tabs(['Customer overview', 'Data'])
             with overview_tab:
-                customer_overview_main_function(directory, address, rfm, scaler, kmeans, average_clusters, df_sales, df_lines, sales_filter)
+                customer_overview_main_function(directory, address, rfm, scaler, kmeans, average_clusters, df_sales,
+                                                df_lines, sales_filter)
             with data_tab:
                 customer_data_tab, customers_data_tab = st.tabs(['Customer data', 'Customers data'])
                 with customer_data_tab:

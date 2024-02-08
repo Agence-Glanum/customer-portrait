@@ -24,3 +24,19 @@ def show_data(categories, products, directory, snapshot_start_date, snapshot_end
         divider='grey')
     st.dataframe(result_df, use_container_width=True)
     return result_df
+
+
+def show_mba(directory, products, product_clusters, category_clusters):
+    if directory == 'Ici store':
+        st.info('The clusters for these tables are not the same !')
+        product_ids = [int(col) for col in product_clusters.columns if col != 'cluster']
+        product_dic = {str(col): products.loc[products['Product_ID'] == col, 'Product_name'].values[0] for col in
+                       product_ids}
+
+        product_clusters = product_clusters.rename(columns=product_dic)
+        st.dataframe(product_clusters)
+
+        st.dataframe(category_clusters)
+    else:
+        st.info('This feature is not ready yet.')
+    return
