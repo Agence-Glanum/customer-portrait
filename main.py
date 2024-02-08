@@ -20,14 +20,14 @@ marketing_username = os.environ.get("marketing_username")
 marketing_password = os.environ.get("marketing_password")
 
 
-def get_filters():
+def get_filters(flag):
     with st.sidebar:
         if get_auth_status():
             st.button("Logout", on_click=logout)
 
         directory = st.selectbox(
             "Choose which data to analyse",
-            ["Ici store", "Glanum"])
+            ["Ici store", "Glanum"], disabled=flag)
 
         sales_filter = st.radio(
             "Analyze your sales based on",
@@ -49,7 +49,7 @@ def get_filters():
 
 
 def data_main():
-    directory, sales_filter, client_type, snapshot_start_date, snapshot_end_date = get_filters()
+    directory, sales_filter, client_type, snapshot_start_date, snapshot_end_date = get_filters(False)
     address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(client_type,
                                                                                                            snapshot_start_date,
                                                                                                            snapshot_end_date,
@@ -101,7 +101,7 @@ def data_main():
         with customer_tab:
             overview_tab, data_tab = st.tabs(["Customer overview", "Data"])
             with overview_tab:
-                customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, sales_filter)
+                customer_overview_main_function(directory, address, rfm, scaler, kmeans, average_clusters, df_sales, df_lines, sales_filter)
             with data_tab:
                 customer_data_tab, customers_data_tab = st.tabs(["Customer data", "Customers data"])
                 with customer_data_tab:
@@ -114,7 +114,15 @@ def data_main():
 
 
 def marketing_main():
-    st.write('Hello')
+    directory, sales_filter, client_type, snapshot_start_date, snapshot_end_date = get_filters(True)
+    address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(client_type,
+                                                                                                           snapshot_start_date,
+                                                                                                           snapshot_end_date,
+                                                                                                           directory)
+    statistics_tab, rfm_tab, mba_tab, cluster_tab = st.tabs(
+        ["Statistics", "RFM Results", "MBA Results", "Cluster Overview"])
+    with statistics_tab:
+        st.write('Hello')
 
 
 def get_user_type():
