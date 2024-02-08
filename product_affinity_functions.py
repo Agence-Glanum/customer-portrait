@@ -136,30 +136,32 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
     product_features, category_features = clean_data(categories, products, df_sales, df_lines,
                                                      transformed_sales_filter)
 
-    st.subheader('Product Clusters')
-    product_model_name = st.radio('Choose the model for product clustering',
-                                  ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
+    with st.expander('Product Clusters'):
+        st.subheader('Product Clusters')
+        product_model_name = st.radio('Choose the model for product clustering',
+                                      ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
 
-    if product_model_name == 'Kmeans':
-        nb_clusters_product = st.slider('Number of product clusters', 2, 11, 4)
-        kmeans_model(product_features, 'umap', nb_clusters_product)
-    elif product_model_name == 'HDBScan':
-        hdbscan_model(product_features, 'umap')
-    else:
-        nb_clusters_product = st.slider('How many product clusters do you want ?', 2, 11, 4)
-        agglomerative_model(product_features, 'umap', nb_clusters_product)
+        if product_model_name == 'Kmeans':
+            nb_clusters_product = st.slider('Number of product clusters', 2, 11, 4)
+            product_clusters = kmeans_model(product_features, 'umap', nb_clusters_product)
+        elif product_model_name == 'HDBScan':
+            product_clusters = hdbscan_model(product_features, 'umap')
+        else:
+            nb_clusters_product = st.slider('How many product clusters do you want ?', 2, 11, 4)
+            product_clusters = agglomerative_model(product_features, 'umap', nb_clusters_product)
 
-    st.subheader('Category Clusters')
-    category_model_name = st.radio('Choose the model for category clustering',
-                                   ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
+    with st.expander('Category Clusters'):
+        st.subheader('Category Clusters')
+        category_model_name = st.radio('Choose the model for category clustering',
+                                       ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
 
-    if category_model_name == 'Kmeans':
-        nb_clusters_category = st.slider('Number of category clusters', 2, 11, 4)
-        kmeans_model(category_features, 'radar', nb_clusters_category)
-    elif category_model_name == 'HDBScan':
-        hdbscan_model(category_features, 'radar')
-    else:
-        nb_clusters_category = st.slider('How many category clusters do you want ?', 2, 11, 4)
-        agglomerative_model(category_features, 'radar', nb_clusters_category)
+        if category_model_name == 'Kmeans':
+            nb_clusters_category = st.slider('Number of category clusters', 2, 11, 4)
+            category_clusters = kmeans_model(category_features, 'radar', nb_clusters_category)
+        elif category_model_name == 'HDBScan':
+            category_clusters = hdbscan_model(category_features, 'radar')
+        else:
+            nb_clusters_category = st.slider('How many category clusters do you want ?', 2, 11, 4)
+            category_clusters = agglomerative_model(category_features, 'radar', nb_clusters_category)
 
-    return
+    return product_clusters, category_clusters

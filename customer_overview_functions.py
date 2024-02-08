@@ -79,21 +79,22 @@ def get_map(directory, address, customer_id):
         france_map.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
         st.write(france_map)
     else:
-        geojson_world = './utils/Geo/curiexplore-pays.geojson'
-        gdf_departements2 = gpd.read_file(geojson_world)
-        gdf_occurences2 = gdf_departements2.merge(customer_zip["Country"], how='left', left_on='code',
-                                                  right_on='Country')
-        gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
-        world_map = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
-                                         featureidkey='properties.code',
-                                         color_continuous_scale="Viridis",
-                                         range_color=(0, 12),
-                                         mapbox_style="carto-positron",
-                                         zoom=1, center={"lat": 46.6031, "lon": 1.8883},
-                                         opacity=0.8,
-                                         )
-        world_map.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
-        st.write(world_map)
+        st.info('This feature is not ready yet.')
+        # geojson_world = './utils/Geo/curiexplore-pays.geojson'
+        # gdf_departements2 = gpd.read_file(geojson_world)
+        # gdf_occurences2 = gdf_departements2.merge(customer_zip["Country"], how='left', left_on='code',
+        #                                           right_on='Country')
+        # gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
+        # world_map = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
+        #                                  featureidkey='properties.code',
+        #                                  color_continuous_scale="Viridis",
+        #                                  range_color=(0, 12),
+        #                                  mapbox_style="carto-positron",
+        #                                  zoom=1, center={"lat": 46.6031, "lon": 1.8883},
+        #                                  opacity=0.8,
+        #                                  )
+        # world_map.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
+        # st.write(world_map)
 
     return
 
