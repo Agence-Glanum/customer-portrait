@@ -71,14 +71,12 @@ def show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date):
 
 def show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date, directory,
              transformed_sales_filter):
-    st.subheader(
-        f'KPIs for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
-        divider='grey')
+    st.subheader(f'KPIs for company :blue[{directory}], from :blue[{snapshot_start_date}] '
+                 f'to :blue[{snapshot_end_date}]', divider='grey')
     show_kpis(invoices, orders, categories, products)
 
-    st.subheader(
-        f'Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] '
-        f'to :blue[{snapshot_end_date}]', divider='grey')
+    st.subheader(f'Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] '
+                 f'to :blue[{snapshot_end_date}]', divider='grey')
     st.write('Timeline of Sales and Orders')
     show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date)
     st.write('Boxplot for both Sales and Orders')
