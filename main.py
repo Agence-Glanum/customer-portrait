@@ -16,8 +16,8 @@ from next_product_prediction import next_prod_pred_main_function
 load_dotenv()
 data_username = os.environ.get('DATA_USERNAME')
 data_password = os.environ.get('DATA_PASSWORD')
-# marketing_username = os.environ.get('MARKETING_USERNAME')
-# marketing_password = os.environ.get('MARKETING_PASSWORD')
+marketing_username = os.environ.get('MARKETING_USERNAME')
+marketing_password = os.environ.get('MARKETING_PASSWORD')
 
 
 def get_filters(flag):
@@ -138,8 +138,8 @@ def set_user_type(user_type):
 def authenticate(username, password):
     if (username == data_username) & (password == data_password):
         return 'data'
-    # elif (username == marketing_username) & (password == marketing_password):
-    #     return 'marketing'
+    elif (username == marketing_username) & (password == marketing_password):
+        return 'marketing'
     else:
         return None
 
