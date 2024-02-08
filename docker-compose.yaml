@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+    streamlit:
+        image: ${IMAGE}/etude-client/streamlit/runtime:${TAG}
+        volumes:
+            - ${PATH}:/app/data
+        ports:
+            - "8501:8501"
+
+    nginx:
+        image: nginx:latest
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        volumes:
+            - ./nginx.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - streamlit
