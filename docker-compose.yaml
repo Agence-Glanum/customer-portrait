@@ -2,7 +2,7 @@ version: '3'
 
 services:
     streamlit:
-        image: ${IMAGE}/etude-client/streamlit/runtime:${TAG}
+        image: ${IMAGE}/etude-client-runtime:${TAG}
         volumes:
             - ${PATH}:/app/data
         env_file:
