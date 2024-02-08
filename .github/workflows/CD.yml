@@ -18,7 +18,7 @@ jobs:
 
     -
       name: Get latest git tag
-      run: echo "LATEST_TAG=$(git describe --tags --abbrev=7)" >> $GITHUB_ENV
+      run: echo "LATEST_TAG=streamlit-$(git describe --tags --abbrev=7)" >> $GITHUB_ENV
 
     -
       name: Build and push Docker image
@@ -28,9 +28,9 @@ jobs:
         NEXUS_HOST: ${{ secrets.NEXUS_HOST }}
       run: |
         docker build -t runtime:${{ env.LATEST_TAG }} .
-        docker login "$NEXUS_HOST" -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-        docker tag runtime:${{ env.LATEST_TAG }} ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}
-        docker push ${{ secrets.NEXUS_HOST }}/etude-client/streamlit/runtime:${{ env.LATEST_TAG }}
+        docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+        docker tag runtime:${{ env.LATEST_TAG }} ${{ secrets.REPOSITORY }}/etude-client-runtime:${{ env.LATEST_TAG }}
+        docker push ${{ secrets.NEXUS_HOST }}/etude-client-runtime:${{ env.LATEST_TAG }}
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -43,7 +43,7 @@ jobs:
 
     -
       name: Get latest git tag
-      run: echo "LATEST_TAG=$(git describe --tags --abbrev=7)" >> $GITHUB_ENV
+      run: echo "LATEST_TAG=streamlit-$(git describe --tags --abbrev=7)" >> $GITHUB_ENV
 
     -
       name: Connect to VPN
@@ -58,4 +58,4 @@ jobs:
         username: ${{ secrets.PC_USER }}
         password: ${{ secrets.PC_PASSWORD }}
         script: |
-          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1 ${{ secrets.NEXUS_HOST }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }}
+          powershell -ExecutionPolicy Bypass -File ${{ secrets.PC_PATH }}docker-cleanup.ps1 ${{ secrets.NEXUS_HOST }} ${{ env.LATEST_TAG }} ${{ secrets.PC_DATA_PATH }} ${{ secrets.ENV_PATH}} ${{ secrets.ENV_PATH}} ${{ secrets.DATA_USERNAME}} ${{ secrets.DATA_PASSWORD}}

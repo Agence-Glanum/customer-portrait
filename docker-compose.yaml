@@ -5,6 +5,8 @@ services:
         image: ${IMAGE}/etude-client/streamlit/runtime:${TAG}
         volumes:
             - ${PATH}:/app/data
+        env_file:
+            - ${ENV_PATH}
         ports:
             - "8501:8501"
 
