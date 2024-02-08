@@ -69,7 +69,7 @@ def show_radar_plot(categorie_features):
             name='Cluster ' + str(i)
         ))
     st.write(fig)
-    return
+    return fig
 
 
 def kmeans_model(features, mode, nb_clusters):
@@ -83,7 +83,7 @@ def kmeans_model(features, mode, nb_clusters):
         show_umap(features)
     elif mode == 'radar':
         show_radar_plot(features)
-    return
+    return features
 
 
 def hdbscan_model(features, mode):
@@ -91,10 +91,10 @@ def hdbscan_model(features, mode):
     param_dist = {'min_cluster_size': [10, 25, 50, 75, 100, 150, 200]}
     validity_scorer = make_scorer(hdbscan.validity.validity_index, greater_is_better=True)
     n_iter_search = 20
-    random_search = RandomizedSearchCV(hdb, param_distributions=param_dist
-                                       , n_iter=n_iter_search
-                                       , scoring=validity_scorer
-                                       , random_state=42)
+    random_search = RandomizedSearchCV(hdb, param_distributions=param_dist,
+                                       n_iter=n_iter_search,
+                                       scoring=validity_scorer,
+                                       random_state=42)
     random_search.fit(features)
     st.write('Hyperparameter Tuning (Best Parameters) : ')
     st.write(f"Min cluster size : {random_search.best_params_['min_cluster_size']}")
@@ -109,7 +109,7 @@ def hdbscan_model(features, mode):
     elif mode == 'radar':
         features['cluster'] = pred + 1
         show_radar_plot(features)
-    return
+    return features
 
 
 def agglomerative_model(features, mode, nb_clusters):
@@ -126,7 +126,7 @@ def agglomerative_model(features, mode, nb_clusters):
         show_umap(features)
     elif mode == 'radar':
         show_radar_plot(features)
-    return
+    return features
 
 
 def prod_aff_main_function(df_sales, df_lines, categories, products, directory, snapshot_start_date, snapshot_end_date,
@@ -146,7 +146,7 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
     elif product_model_name == 'HDBScan':
         hdbscan_model(product_features, 'umap')
     else:
-        nb_clusters_product = st.number_input('How many product clusters do you want ?', value=5)
+        nb_clusters_product = st.slider('How many product clusters do you want ?', 2, 11, 4)
         agglomerative_model(product_features, 'umap', nb_clusters_product)
 
     st.subheader('Category Clusters')
@@ -159,7 +159,7 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
     elif category_model_name == 'HDBScan':
         hdbscan_model(category_features, 'radar')
     else:
-        nb_clusters_category = st.number_input('How many category clusters do you want ?', value=5)
+        nb_clusters_category = st.slider('How many category clusters do you want ?', 2, 11, 4)
         agglomerative_model(category_features, 'radar', nb_clusters_category)
 
     return

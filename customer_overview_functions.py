@@ -1,9 +1,7 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
 import geopandas as gpd
-import json
 
 
 def get_info(rfm, customer_id, scaler, kmeans):
@@ -63,41 +61,47 @@ def customer_overview_data_function(rfm, df_sales, df_lines, transformed_sales_f
     return
 
 
-def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sales, df_lines, transformed_sales_filter):
+def get_map(directory, address, customer_id):
+    customer_zip = address[address['Customer_ID'] == customer_id]
+    customer_zip.loc[:, "Zip_code"] = customer_zip["Zip_code"].str[:2]
+
+    if directory == 'Ici store':
+        geojson_france = './utils/Geo/contour-des-departements.geojson'
+        gdf_departements = gpd.read_file(geojson_france)
+        france_map = px.choropleth_mapbox(customer_zip, geojson=gdf_departements, locations='Zip_code',
+                                          color='Zip_code',
+                                          color_continuous_scale="Viridis",
+                                          range_color=(0, 12),
+                                          mapbox_style="carto-positron",
+                                          zoom=3.5, center={"lat": 46.6031, "lon": 1.8883},
+                                          opacity=0.8,
+                                          )
+        france_map.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
+        st.write(france_map)
+    else:
+        geojson_world = './utils/Geo/curiexplore-pays.geojson'
+        gdf_departements2 = gpd.read_file(geojson_world)
+        gdf_occurences2 = gdf_departements2.merge(customer_zip["Country"], how='left', left_on='code',
+                                                  right_on='Country')
+        gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
+        world_map = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
+                                         featureidkey='properties.code',
+                                         color_continuous_scale="Viridis",
+                                         range_color=(0, 12),
+                                         mapbox_style="carto-positron",
+                                         zoom=1, center={"lat": 46.6031, "lon": 1.8883},
+                                         opacity=0.8,
+                                         )
+        world_map.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
+        st.write(world_map)
+
+    return
+
+
+def customer_overview_main_function(directory, address, rfm, scaler, kmeans, average_clusters, df_sales, df_lines, transformed_sales_filter):
     cltv_df = compute_lifetime_value(df_sales, df_lines, transformed_sales_filter)
     customer_id = st.selectbox('Customers', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
-
-    # customer_zip = address[address['Customer_ID'] == customer_id]
-    # customer_zip.loc[:, "Zip_code"] = customer_zip["Zip_code"].str[:2]
-    # print(customer_zip)
-    # geojson_path = './data/contour-des-departements.geojson'
-    # geojson_world = './data/curiexplore-pays.geojson'
-    #
-    # ### map countries
-    # gdf_departements2 = gpd.read_file(geojson_world)
-    # gdf_occurences2 = gdf_departements2.merge(customer_zip["Country"], how='left', left_on='code', right_on='Country')
-    # gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
-    # fig3 = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
-    #                             featureidkey='properties.code',
-    #                             color_continuous_scale="Viridis",
-    #                             range_color=(0, 12),
-    #                             mapbox_style="carto-positron",
-    #                             zoom=1, center={"lat": 46.6031, "lon": 1.8883},
-    #                             opacity=0.8,
-    #                             )
-    # fig3.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
-    #
-    # ### map departments
-    # gdf_departements = gpd.read_file(geojson_path)
-    # fig2 = px.choropleth_mapbox(customer_zip, geojson=gdf_departements, locations='Zip_code', color='Zip_code',
-    #                             color_continuous_scale="Viridis",
-    #                             range_color=(0, 12),
-    #                             mapbox_style="carto-positron",
-    #                             zoom=3.5, center={"lat": 46.6031, "lon": 1.8883},
-    #                             opacity=0.8,
-    #                             )
-    # fig2.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=True)
 
     col1, col2, col3 = st.columns(3)
 
@@ -117,10 +121,7 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, df_sa
     col3.metric("Median CLTV", round(cltv_df['CLTV'].median(), 2))
     col3.metric("Average CLTV", round(cltv_df['CLTV'].mean(), 2))
 
-    # st.subheader('Customer Location')
-    # if (customer_zip["Country"] == "FR").any():
-    #     st.write(fig2)
-    # else:
-    #     st.write(fig3)
+    st.subheader('Customer Location')
+    get_map(directory, address, customer_id)
 
     return
