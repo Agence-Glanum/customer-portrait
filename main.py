@@ -101,8 +101,8 @@ def data_main():
         with customer_tab:
             overview_tab, data_tab = st.tabs(['Customer overview', 'Data'])
             with overview_tab:
-                customer_overview_main_function(directory, address, rfm, scaler, kmeans, average_clusters, df_sales,
-                                                df_lines, sales_filter)
+                customer_overview_main_function(directory, invoices,orders, address, rfm, scaler, kmeans, average_clusters, df_sales,
+                                                df_lines, snapshot_start_date, snapshot_end_date, sales_filter)
             with data_tab:
                 customer_data_tab, customers_data_tab = st.tabs(['Customer data', 'Customers data'])
                 with customer_data_tab:
