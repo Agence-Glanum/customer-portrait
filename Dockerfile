@@ -10,11 +10,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN exit
+
 RUN apt-get update
 
 RUN apt-get install -y unixodbc-dev
-
-RUN apt-get install -y libgssapi-krb5-2
 
 COPY . /app
 

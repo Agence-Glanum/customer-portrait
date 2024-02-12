@@ -51,7 +51,6 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
 
     customer_zip = address[address['Customer_ID'] == customer_id]
     customer_zip.loc[:, "Zip_code"] = customer_zip["Zip_code"].str[:2]
-    print(customer_zip)
     geojson_path = './data/contour-des-departements.geojson'
     geojson_world = './data/curiexplore-pays.geojson'
 
@@ -72,9 +71,6 @@ def customer_overview_main_function(rfm, scaler, kmeans, average_clusters, invoi
 
     ### map departments
     gdf_departements = gpd.read_file(geojson_path)
-    # customer_zip["Zip_code"] = customer_zip["Zip_code"].astype(str)
-    # gdf_occurrences = gdf_departements.merge(customer_zip["Zip_code"], how='left', left_on='code', right_on='Zip_code')
-    # gdf_occurrences['Zip_code'] = gdf_occurrences['Zip_code'].fillna(0)
     fig2 = px.choropleth_mapbox(customer_zip, geojson=gdf_departements, locations='Zip_code', color='Zip_code',
                                 color_continuous_scale="Viridis",
                                 range_color=(0, 12),
