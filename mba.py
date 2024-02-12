@@ -14,7 +14,8 @@ def show_data(categories, products, directory, snapshot_start_date, snapshot_end
                          right_on='Category_ID', how='left')
 
     result_df = result_df.rename(columns={'Category_name_x': 'Category_name',
-                                          'Category_name_y': 'Parent_name'}).drop(columns=["Category_ID_x", "Category_ID_y"])
+                                          'Category_name_y': 'Parent_name'}).drop(
+        columns=["Category_ID_x", "Category_ID_y"])
 
     result_df = result_df[['Category_name', 'Parent_name', 'Product_name']].fillna('')
 
@@ -37,19 +38,22 @@ def show_mba(directory, products, product_clusters, category_clusters, apriori_r
 
         st.info('The product and category clusters not the same !')
 
+        product_melted_df = pd.melt(product_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
+                                    var_name='product', value_name='spending')
+        product_melted_df = product_melted_df[product_melted_df['spending'] > 0]
+        product_grouped_df = product_melted_df.groupby('Cluster MBA')['product'].apply(lambda x: list(set(x)))
+
+        category_melted_df = pd.melt(category_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
+                                     var_name='category', value_name='spending')
+        category_melted_df = category_melted_df[category_melted_df['spending'] > 0]
+        category_grouped_df = category_melted_df.groupby('Cluster MBA')['category'].apply(lambda x: list(set(x)))
+
         with st.expander('Product Clusters'):
             st.dataframe(product_clusters)
-            melted_df = pd.melt(product_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'], var_name='product', value_name='spending')
-            melted_df = melted_df[melted_df['spending'] > 0]
-            product_grouped_df = melted_df.groupby('Cluster MBA')['product'].apply(lambda x: list(set(x)))
             st.write(product_grouped_df)
 
         with st.expander('Category Clusters'):
             st.dataframe(category_clusters)
-            melted_df = pd.melt(category_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'], var_name='category',
-                                value_name='spending')
-            melted_df = melted_df[melted_df['spending'] > 0]
-            category_grouped_df = melted_df.groupby('Cluster MBA')['category'].apply(lambda x: list(set(x)))
             st.write(category_grouped_df)
 
         with st.expander('Recommendations'):
@@ -61,4 +65,4 @@ def show_mba(directory, products, product_clusters, category_clusters, apriori_r
             # st.dataframe(fpgrowth_rules_categories[['antecedents_', 'consequents_']])
     else:
         st.info('This feature is not ready yet.')
-    return product_grouped_df, category_grouped_df
+    return

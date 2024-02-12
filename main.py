@@ -1,23 +1,15 @@
-import os
 import datetime
 import streamlit as st
-from dotenv import load_dotenv
 from mba import show_mba
-from customer_overview_functions import customer_overview_main_function
 from home_functions import show_eda
 from product_affinity_functions import prod_aff_main_function
 from rfm_segmentation_functions import rfm_main_function
 from most_frequent_pattern import most_frequent_pattern_main_function
 from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
-from customer_overview_functions import customer_overview_data_function
+from customer_overview_functions import customer_overview_main_function
 from next_product_prediction import next_prod_pred_main_function
-
-load_dotenv()
-data_username = os.environ.get('DATA_USERNAME')
-data_password = os.environ.get('DATA_PASSWORD')
-marketing_username = os.environ.get('MARKETING_USERNAME')
-marketing_password = os.environ.get('MARKETING_PASSWORD')
+from utils.authentification import get_auth_status, render_login_form, get_user_type, logout
 
 
 def get_filters(flag):
@@ -60,24 +52,24 @@ def data_main():
     df_sales, df_lines = invoices, invoices_lines
     if sales_filter == 'Invoice':
         df_sales = invoices[
-            (invoices['Paid'] == 1) & (invoices['Total_price'] > 0) & (invoices['Customer_ID'] is not None)]
-        df_lines = invoices_lines[(invoices_lines['Quantity'] > 0) & (invoices_lines['Total_price'] > 0)]
+            (invoices['Paid'] == 1) & (invoices['Customer_ID'] is not None)]
+        df_lines = invoices_lines[(invoices_lines['Quantity'] > 0)]
 
     if sales_filter == 'Order':
         df_sales = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
-                          & (orders['Total_price'] > 0) & (orders['Customer_ID'] is not None)]
-        df_lines = orders_lines[(orders_lines['Quantity'] > 0) & (orders_lines['Total_price'] > 0)]
+                          & (orders['Customer_ID'] is not None)]
+        df_lines = orders_lines[(orders_lines['Quantity'] > 0)]
 
     if not df_sales.empty and not df_lines.empty:
         with home_tab:
-            show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date,
-                     directory, sales_filter)
+            show_eda(products, categories, invoices_lines, snapshot_start_date, snapshot_end_date, directory,
+                     sales_filter)
 
         with geo_tab:
             st.write('Map')
 
         with rfm_seg_tab:
-            rfm, scaler, kmeans, average_clusters, ml_clusters, segment_1_cluters, segment_2_cluters = rfm_main_function(
+            rfm, scaler, kmeans, ml_clusters, segment_1_cluters, segment_2_cluters = rfm_main_function(
                 df_sales, snapshot_end_date, customers, directory,
                 snapshot_start_date, sales_filter)
 
@@ -98,20 +90,13 @@ def data_main():
             with product_pred_tab:
                 next_prod_pred_main_function(apriori_rules_products, fpgrowth_rules_products, products)
             with data_tab:
-                product_grouped_df, category_grouped_df = show_mba(directory, products, product_clusters,
-                                                                   category_clusters, apriori_rules_products,
-                                                                   fpgrowth_rules_products, apriori_rules_categories,
-                                                                   fpgrowth_rules_categories)
+                show_mba(directory, products, product_clusters, category_clusters, apriori_rules_products,
+                         fpgrowth_rules_products, apriori_rules_categories,
+                         fpgrowth_rules_categories)
 
         with customer_tab:
-            overview_tab, data_tab = st.tabs(['Customer overview', 'Data'])
-            with overview_tab:
-                customer_overview_main_function(directory, invoices,orders, address, rfm, scaler, kmeans, average_clusters, df_sales,
-                                                df_lines, snapshot_start_date, snapshot_end_date, sales_filter)
-            with data_tab:
-                customer_overview_data_function(rfm, df_sales, df_lines, product_clusters, category_clusters,
-                                                product_grouped_df, category_grouped_df, ml_clusters, segment_1_cluters,
-                                                segment_2_cluters, sales_filter, show_full_dataframe=True)
+            customer_overview_main_function(address, rfm, scaler, kmeans, df_sales, df_lines, sales_filter, directory,
+                                            snapshot_start_date, snapshot_end_date)
     else:
         st.error('No data available for the selected time period !')
     return
@@ -124,7 +109,7 @@ def marketing_main():
                                                                                                            snapshot_end_date,
                                                                                                            directory)
     statistics_tab, rfm_tab, mba_tab, cluster_tab = st.tabs(
-        ['Statistics', 'RFM Results', 'MBA Results', 'Cluster Overview'])
+        ['Statistics', 'RFM Results', 'MBA Results', 'Overview'])
 
     df_sales, df_lines = invoices, invoices_lines
     if sales_filter == 'Invoice':
@@ -139,102 +124,11 @@ def marketing_main():
 
     if not df_sales.empty and not df_lines.empty:
         with statistics_tab:
-            show_eda(invoices, orders, customers, products, categories, snapshot_start_date, snapshot_end_date,
-                     directory, sales_filter)
-
-        with rfm_tab:
-            rfm, scaler, kmeans, average_clusters, ml_clusters, segment_1_cluters, segment_2_cluters = rfm_main_function(
-                df_sales, snapshot_end_date, customers, directory,
-                snapshot_start_date, sales_filter)
-
-        with mba_tab:
-            mba_statistics, prod_aff_tab, most_freq_tab, product_pred_tab, data_tab = st.tabs(
-                ['Statistics', 'Product affinity', 'Most Frequent Pattern', 'Next product prediction', 'Data'])
-            with mba_statistics:
-                mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
-                                             snapshot_end_date, directory, sales_filter)
-            with prod_aff_tab:
-                product_clusters, category_clusters = prod_aff_main_function(df_sales, df_lines, categories, products,
-                                                                             directory, snapshot_start_date,
-                                                                             snapshot_end_date, sales_filter)
-            with most_freq_tab:
-                apriori_rules_products, fpgrowth_rules_products, apriori_rules_categories, fpgrowth_rules_categories = most_frequent_pattern_main_function(
-                    df_lines, products, categories,
-                    sales_filter)
-            with product_pred_tab:
-                next_prod_pred_main_function(apriori_rules_products, fpgrowth_rules_products, products)
-            with data_tab:
-                product_grouped_df, category_grouped_df = show_mba(directory, products, product_clusters,
-                                                                   category_clusters, apriori_rules_products,
-                                                                   fpgrowth_rules_products, apriori_rules_categories,
-                                                                   fpgrowth_rules_categories)
-
-        with cluster_tab:
-            overview_tab, data_tab = st.tabs(['Customer overview', 'Data'])
-            with overview_tab:
-                customer_overview_main_function(directory, address, rfm, scaler, kmeans, average_clusters, df_sales,
-                                                df_lines, sales_filter)
-            with data_tab:
-                customer_overview_data_function(
-                    rfm, df_sales, df_lines, product_clusters, category_clusters,
-                    product_grouped_df, category_grouped_df, ml_clusters, segment_1_cluters,
-                    segment_2_cluters, sales_filter, show_full_dataframe=True)
+            show_eda(products, categories, invoices_lines, snapshot_start_date, snapshot_end_date, directory,
+                     sales_filter)
     else:
         st.error('No data available for the selected time period !')
     return
-
-
-def get_user_type():
-    if 'user_type' not in st.session_state:
-        st.session_state.user_type = None
-    return st.session_state.user_type
-
-
-def set_user_type(user_type):
-    st.session_state.user_type = user_type
-
-
-def authenticate(username, password):
-    if (username == data_username) & (password == data_password):
-        return 'data'
-    elif (username == marketing_username) & (password == marketing_password):
-        return 'marketing'
-    else:
-        return None
-
-
-def get_auth_status():
-    if 'auth_status' not in st.session_state:
-        st.session_state.auth_status = False
-    return st.session_state.auth_status
-
-
-def set_auth_status(status):
-    st.session_state.auth_status = status
-
-
-def render_login_form():
-    placeholder = st.empty()
-    with placeholder.form('authentifiation'):
-        username = st.text_input('Username')
-        password = st.text_input('Password', type='password')
-        login = st.form_submit_button('Login')
-    if login:
-        auth_result = authenticate(username, password)
-        if auth_result:
-            placeholder.empty()
-            set_auth_status(True)
-            set_user_type(auth_result)
-            return auth_result
-        else:
-            st.write('Wrong username or password !')
-            st.stop()
-    return None
-
-
-def logout():
-    set_auth_status(False)
-    set_user_type(None)
 
 
 def main():
