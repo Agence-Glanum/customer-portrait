@@ -65,4 +65,4 @@ def show_mba(directory, products, product_clusters, category_clusters, apriori_r
             # st.dataframe(fpgrowth_rules_categories[['antecedents_', 'consequents_']])
     else:
         st.info('This feature is not ready yet.')
-    return
+    return product_grouped_df, category_grouped_df

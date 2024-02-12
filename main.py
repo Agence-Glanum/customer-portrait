@@ -1,4 +1,5 @@
 import datetime
+import pandas as pd
 import streamlit as st
 from mba import show_mba
 from home_functions import show_eda
@@ -7,9 +8,10 @@ from rfm_segmentation_functions import rfm_main_function
 from most_frequent_pattern import most_frequent_pattern_main_function
 from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
-from customer_overview_functions import customer_overview_main_function
+from overview_functions import overview_main_function
 from next_product_prediction import next_prod_pred_main_function
 from utils.authentification import get_auth_status, render_login_form, get_user_type, logout
+from utils.utility_functions import compute_lifetime_value
 
 
 def get_filters(flag):
@@ -19,7 +21,7 @@ def get_filters(flag):
 
         directory = st.selectbox(
             'Choose which data to analyse',
-            ['Ici store', 'Glanum'], disabled=flag)
+            ['Ici store', 'Glanum', 'Olist'], disabled=flag)
 
         sales_filter = st.radio(
             'Analyze your sales based on',
@@ -47,7 +49,7 @@ def data_main():
                                                                                                            snapshot_end_date,
                                                                                                            directory)
     home_tab, geo_tab, rfm_seg_tab, mba_tab, customer_tab = st.tabs(
-        ['Home', 'Geodemographic profiling', 'RFM Segmentation', 'MBA', 'Customer Overview'])
+        ['Home', 'Geodemographic profiling', 'RFM Segmentation', 'MBA', 'Overview'])
 
     df_sales, df_lines = invoices, invoices_lines
     if sales_filter == 'Invoice':
@@ -62,14 +64,14 @@ def data_main():
 
     if not df_sales.empty and not df_lines.empty:
         with home_tab:
-            show_eda(products, categories, invoices_lines, snapshot_start_date, snapshot_end_date, directory,
-                     sales_filter)
+            cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
+            show_eda(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
 
         with geo_tab:
             st.write('Map')
 
         with rfm_seg_tab:
-            rfm, scaler, kmeans, ml_clusters, segment_1_cluters, segment_2_cluters = rfm_main_function(
+            rfm, ml_clusters, segment_1_clusters, segment_2_clusters = rfm_main_function(
                 df_sales, snapshot_end_date, customers, directory,
                 snapshot_start_date, sales_filter)
 
@@ -90,13 +92,22 @@ def data_main():
             with product_pred_tab:
                 next_prod_pred_main_function(apriori_rules_products, fpgrowth_rules_products, products)
             with data_tab:
-                show_mba(directory, products, product_clusters, category_clusters, apriori_rules_products,
-                         fpgrowth_rules_products, apriori_rules_categories,
-                         fpgrowth_rules_categories)
+                product_grouped_df, category_grouped_df = show_mba(directory, products, product_clusters, category_clusters,
+                                                                   apriori_rules_products, fpgrowth_rules_products,
+                                                                   apriori_rules_categories, fpgrowth_rules_categories)
 
         with customer_tab:
-            customer_overview_main_function(address, rfm, scaler, kmeans, df_sales, df_lines, sales_filter, directory,
-                                            snapshot_start_date, snapshot_end_date)
+            overview_data = pd.merge(rfm, product_clusters.reset_index()[['Customer_ID', 'Cluster MBA']],
+                                     on='Customer_ID')
+            overview_data = overview_data.rename(columns={'Cluster MBA': 'Product cluster MBA'})
+            overview_data = pd.merge(overview_data, category_clusters.reset_index()[['Customer_ID', 'Cluster MBA']],
+                                     on='Customer_ID')
+            overview_data = overview_data.rename(columns={'Cluster MBA': 'Category cluster MBA'})
+            overview_data = pd.merge(overview_data, cltv_df, on='Customer_ID')
+
+            overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
+                                   product_grouped_df, category_grouped_df, directory, snapshot_start_date, snapshot_end_date)
+
     else:
         st.error('No data available for the selected time period !')
     return
@@ -122,12 +133,6 @@ def marketing_main():
                           & (orders['Total_price'] > 0) & (orders['Customer_ID'] is not None)]
         df_lines = orders_lines[(orders_lines['Quantity'] > 0) & (orders_lines['Total_price'] > 0)]
 
-    if not df_sales.empty and not df_lines.empty:
-        with statistics_tab:
-            show_eda(products, categories, invoices_lines, snapshot_start_date, snapshot_end_date, directory,
-                     sales_filter)
-    else:
-        st.error('No data available for the selected time period !')
     return
 
 
