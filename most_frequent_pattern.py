@@ -5,14 +5,15 @@ from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules, fpgrowth
 
 
-def clean_data(df_lines, products, transformed_sales_filter):
-    data = df_lines.merge(products, on='Product_ID').groupby(transformed_sales_filter + '_ID')['Product_name'].apply(
-        lambda x: list(set(x))).to_frame()
-    data = list(data['Product_name'])
+def clean_data(df_lines, products, categories, sales_filter, mode):
+    data = df_lines.merge(products, on='Product_ID').merge(categories, on='Category_ID').groupby(
+        sales_filter + '_ID')[mode+'_name'].apply(lambda x: list(set(x))).to_frame()
+    data = list(data[mode+'_name'])
 
     te = TransactionEncoder()
     te_ary = te.fit(data).transform(data)
     df = pd.DataFrame(te_ary, columns=te.columns_)
+
     return df
 
 
@@ -68,7 +69,8 @@ def fpgrowth_approach(df, min_support=0.001, metric='lift', min_threshold=0.01):
 
 
 def most_frequent_pattern_main_function(df_lines, products, categories, transformed_sales_filter):
-    df = clean_data(df_lines, products, transformed_sales_filter)
+    df_products = clean_data(df_lines, products, categories, transformed_sales_filter, 'Product')
+    df_categories = clean_data(df_lines, products, categories, transformed_sales_filter, 'Category')
 
     col1, col2, col3 = st.columns(3)
     min_support = col1.number_input('Insert min support', value=0.001, format='%f')
@@ -84,10 +86,18 @@ def most_frequent_pattern_main_function(df_lines, products, categories, transfor
         st.write("***Conviction Value ->*** quantifies how much the presence of antecedent implies the absence of consequent.")
         st.write("***Zhang's metric ->*** measure designed to assess the strength of association (positive or negative) between two items, taking into account both their co-occurrence and their non-co-occurrence.")
 
-    st.header('First approach - Apriori')
-    apriori_mfp, apriori_rules = apriori_approach(df, min_support, metric, min_threshold)
+    with st.expander('Most Frequent Pattern for Products'):
+        st.header('First approach - Apriori')
+        apriori_mfp_products, apriori_rules_products = apriori_approach(df_products, min_support, metric, min_threshold)
 
-    st.header('Second approach - FP growth')
-    fpgrowth_mfp, fpgrowth_rules = fpgrowth_approach(df, min_support, metric, min_threshold)
+        st.header('Second approach - FP growth')
+        fpgrowth_mfp_products, fpgrowth_rules_products = fpgrowth_approach(df_products, min_support, metric, min_threshold)
 
-    return apriori_rules, fpgrowth_rules
+    with st.expander('Most Frequent Pattern for Categories'):
+        st.header('First approach - Apriori')
+        apriori_mfp_categories, apriori_rules_categories = apriori_approach(df_categories, min_support, metric, min_threshold)
+
+        st.header('Second approach - FP growth')
+        fpgrowth_mfp_categories, fpgrowth_rules_categories = fpgrowth_approach(df_categories, min_support, metric, min_threshold)
+
+    return apriori_rules_products, fpgrowth_rules_products, apriori_rules_categories, fpgrowth_rules_categories
