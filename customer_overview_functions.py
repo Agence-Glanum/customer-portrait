@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import geopandas as gpd
-
+from home_functions import show_timelines
 
 def get_info(rfm, customer_id, scaler, kmeans):
     col_names = ['Recency', 'Frequency', 'Monetary']
@@ -131,6 +131,10 @@ def customer_overview_main_function(directory, address, rfm, scaler, kmeans, ave
     col3.metric('Lifetime value', round(cltv_df[cltv_df.index == customer_id]['CLTV'], 2))
     col3.metric('Median CLTV', round(cltv_df['CLTV'].median(), 2))
     col3.metric('Average CLTV', round(cltv_df['CLTV'].mean(), 2))
+
+
+    st.subheader('Timeline of Sales and Orders')
+    show_timelines(invoices[(invoices['Customer_ID'] == customer_id)],orders[(orders['Customer_ID'] == customer_id)],snapshot_start_date,snapshot_end_date)
 
     st.subheader('Customer Location')
     get_map(directory, address, customer_id)
