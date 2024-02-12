@@ -3,18 +3,15 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from utils.data_viz import show_timelines
-from customer_overview_functions import compute_lifetime_value
 
 
-def show_kpis(invoices, invoices_lines, orders, categories, products, transformed_sales_filter):
-    # cltv_df = compute_lifetime_value(invoices, invoices_lines, transformed_sales_filter)
-
+def show_kpis(invoices, orders, categories, products, cltv_df):
     col1, col2, col3 = st.columns(3)
 
     col1.metric('Customers', invoices['Customer_ID'].nunique())
     col1.metric('Categories Count', str(len(categories)))
     col1.metric('Products Count', str(len(products)))
-    # col1.metric('Average LTV', round(cltv_df['CLTV'].mean(), 2))
+    col1.metric('Lifetime value', str(round(cltv_df['CLTV'].mean(), 2)))
 
     valid_orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')]
     col2.metric('Orders', valid_orders['Order_ID'].nunique())
@@ -43,7 +40,7 @@ def show_boxplot(invoices, orders):
     return
 
 
-def show_eda(products, categories, invoices_lines, snapshot_start_date, snapshot_end_date, directory, transformed_sales_filter):
+def show_eda(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory):
     path = './data/Glanum/' if directory == 'Glanum' else './data/IciStore/'
     invoices = pd.read_csv(f'{path}/Invoices.csv')
     orders = pd.read_csv(f'{path}/Orders.csv')
@@ -51,7 +48,7 @@ def show_eda(products, categories, invoices_lines, snapshot_start_date, snapshot
     st.subheader(
         f'KPIs for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
         divider='grey')
-    show_kpis(invoices, invoices_lines, orders, categories, products, transformed_sales_filter)
+    show_kpis(invoices, orders, categories, products, cltv_df)
 
     st.subheader(
         f'Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
