@@ -47,19 +47,19 @@ def show_umap(product_features):
     ump_2d = umap.UMAP(n_components=2, init='random', random_state=0)
     umap_2d_data = ump_2d.fit_transform(product_features)
     fig = px.scatter(x=umap_2d_data[:, 0], y=umap_2d_data[:, 1],
-                     title="2D UMAP Basket Clusters", color=product_features.cluster.astype(str))
+                     title="2D UMAP Basket Clusters", color=product_features['Cluster MBA'].astype(str))
     st.write(fig)
 
     ump_3d = umap.UMAP(n_components=3, init='random', random_state=0)
     umap_3d_data = ump_3d.fit_transform(product_features)
     fig = px.scatter_3d(x=umap_3d_data[:, 0], y=umap_3d_data[:, 1], z=umap_3d_data[:, 2],
-                        title="3D UMAP Basket Clusters", color=product_features.cluster.astype(str))
+                        title="3D UMAP Basket Clusters", color=product_features['Cluster MBA'].astype(str))
     st.write(fig)
     return
 
 
 def show_radar_plot(categorie_features):
-    avg_df = categorie_features.groupby(['cluster']).mean()
+    avg_df = categorie_features.groupby(['Cluster MBA']).mean()
     fig = go.Figure()
     for i in range(len(avg_df)):
         fig.add_trace(go.Scatterpolar(
@@ -78,7 +78,7 @@ def kmeans_model(features, mode, nb_clusters):
     model.fit(features)
     st.write("Silhouette score : ", round(silhouette_score(features, model.labels_, metric='euclidean'), 2))
     pred = model.predict(features)
-    features['cluster'] = pred
+    features['Cluster MBA'] = pred
     if mode == 'umap':
         show_umap(features)
     elif mode == 'radar':
@@ -104,10 +104,10 @@ def hdbscan_model(features, mode):
     pred = model.fit_predict(features)
     st.write(f"=> Number of optimal clusters : {len(np.unique(model.labels_))}")
     if mode == 'umap':
-        features['cluster'] = pred
+        features['Cluster MBA'] = pred
         show_umap(features)
     elif mode == 'radar':
-        features['cluster'] = pred + 1
+        features['Cluster MBA'] = pred + 1
         show_radar_plot(features)
     return features
 
@@ -121,7 +121,7 @@ def agglomerative_model(features, mode, nb_clusters):
 
     model = AgglomerativeClustering(n_clusters=nb_clusters, compute_distances=True)
     pred = model.fit_predict(features)
-    features['cluster'] = pred
+    features['Cluster MBA'] = pred
     if mode == 'umap':
         show_umap(features)
     elif mode == 'radar':

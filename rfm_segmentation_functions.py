@@ -123,9 +123,9 @@ def customer_segmentation_model(scaled_features, nb_clusters, directory, snapsho
     st.write("Silhouette score : ", round(silhouette_score(scaled_features, kmeans.labels_, metric='euclidean'), 2))
 
     pred = kmeans.predict(scaled_features)
-    scaled_features['cluster'] = ['Cluster ' + str(i) for i in pred]
+    scaled_features['Cluster RFM'] = ['Cluster ' + str(i) for i in pred]
 
-    avg_df = scaled_features.groupby(['cluster'], as_index=False).mean()
+    avg_df = scaled_features.groupby(['Cluster RFM'], as_index=False).mean()
 
     scaler = MinMaxScaler()
     avg_df[['Recency', 'Frequency', 'Monetary']] = scaler.fit_transform(avg_df[['Recency', 'Frequency', 'Monetary']])
@@ -134,7 +134,7 @@ def customer_segmentation_model(scaled_features, nb_clusters, directory, snapsho
         f'RFM Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
         divider='grey')
     fig = go.Figure()
-    for i in range(len(avg_df['cluster'])):
+    for i in range(len(avg_df['Cluster RFM'])):
         fig.add_trace(go.Scatterpolar(
             r=[avg_df['Recency'][i], avg_df['Frequency'][i], avg_df['Monetary'][i]],
             theta=['Recency', 'Frequency', 'Monetary'],
@@ -143,7 +143,7 @@ def customer_segmentation_model(scaled_features, nb_clusters, directory, snapsho
         ))
     st.write(fig)
 
-    bar_data = scaled_features['cluster'].value_counts()
+    bar_data = scaled_features['Cluster RFM'].value_counts()
     fig = px.bar(x=bar_data.index, y=bar_data.values, color=bar_data.values, title='Number of Customer in each Cluster')
     st.write(fig)
 
@@ -417,7 +417,7 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
             scaled_features = scaler.transform(features.values)
             customer_cluster = kmeans.predict(scaled_features)
             customer_cluster_list.append(customer_cluster[0])
-        rfm['Cluster'] = customer_cluster_list
+        rfm['Cluster RFM'] = customer_cluster_list
         rfm = rfm.merge(customers[['Customer_ID', 'Customer_name']], on='Customer_ID')
         rfm['Customer_ID'] = rfm['Customer_ID'].astype(int)
         # customer_id_rfm = st.selectbox('Select a customer',
@@ -430,19 +430,20 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
         st.subheader(
             f"Details for all customers for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
             divider='grey')
-        rfm = rfm[['Customer_ID', 'Customer_name', 'Recency', 'Frequency', 'Monetary', 'R', 'F', 'M', 'Cluster', 'Segment 1', 'Segment 2']]
+        rfm = rfm[['Customer_ID', 'Customer_name', 'Recency', 'Frequency', 'Monetary', 'R', 'F', 'M', 'Cluster RFM', 'Segment 1', 'Segment 2']]
         st.dataframe(rfm, use_container_width=True)
 
         with st.expander("ML Clusters details"):
             st.write('The average of the Recency, Frequency, Monetary values for each cluster')
-            st.dataframe(rfm.groupby(['Cluster'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean())
+            ml_clusters = rfm.groupby(['Cluster RFM'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
+            st.dataframe(ml_clusters)
 
         with st.expander("RFM Segments using approach 1 details"):
-            df = rfm.groupby(['Segment 1'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
-            segment_1_details(df)
+            segment_1_cluters = rfm.groupby(['Segment 1'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
+            segment_1_details(segment_1_cluters)
 
         with st.expander("RFM Segments using approach 2 details"):
-            df = rfm.groupby(['Segment 2'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
-            segment_2_details(df)
+            segment_2_cluters = rfm.groupby(['Segment 2'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
+            segment_2_details(segment_2_cluters)
 
-    return rfm, scaler, kmeans, average_clusters
+    return rfm, scaler, kmeans, average_clusters, ml_clusters, segment_1_cluters, segment_2_cluters
