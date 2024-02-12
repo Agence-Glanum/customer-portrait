@@ -2,7 +2,8 @@ import streamlit as st
 import plotly.express as px
 
 
-def show_eda(invoices, invoices_lines, products, categories, transformed_sales_filter):
+def show_eda(invoices, invoices_lines, products, categories, transformed_sales_filter): 
+
     st.subheader('Basket Size')
     df = invoices.merge(invoices_lines, on=transformed_sales_filter + '_ID')
     new_df = df.groupby(transformed_sales_filter + '_ID').agg(
@@ -13,16 +14,28 @@ def show_eda(invoices, invoices_lines, products, categories, transformed_sales_f
     bar_data = invoices_lines.groupby('Product_ID')['Quantity'].sum().reset_index().merge(products, on='Product_ID').groupby('Product_name')['Quantity'].sum().reset_index()[['Product_name', 'Quantity']]
     bar_data.sort_values('Quantity', ascending=True, inplace=True)
     st.write(px.bar(bar_data.tail(10), x='Quantity', y='Product_name', orientation='h'))
+    
+    bar_value_data = invoices_lines.groupby('Product_ID')['Total_price'].sum().reset_index().merge(products, on='Product_ID').groupby('Product_name')['Total_price'].sum().reset_index()[['Product_name', 'Total_price']]
+    bar_value_data.sort_values('Total_price', ascending=True, inplace=True)
+    st.write(px.bar(bar_value_data.tail(10), x='Total_price', y='Product_name', orientation='h'))
 
     st.subheader('10 Flop Products')
     st.write(px.bar(bar_data.head(10), x='Quantity', y='Product_name', orientation='h'))
+    st.write(px.bar(bar_value_data.head(10), x='Total_price', y='Product_name', orientation='h'))
 
     st.subheader('Product\'s Categories ranking')
     bar_data = invoices_lines.groupby('Product_ID')['Quantity'].sum().reset_index().merge(
         products, on='Product_ID').merge(categories, on='Category_ID').groupby(
         'Category_name')['Quantity'].sum().reset_index()[['Category_name', 'Quantity']]
     bar_data.sort_values('Quantity', ascending=True, inplace=True)
+    bar_value_data = invoices_lines.groupby('Product_ID')['Total_price'].sum().reset_index().merge(
+        products, on='Product_ID').merge(categories, on='Category_ID').groupby(
+        'Category_name')['Total_price'].sum().reset_index()[['Category_name', 'Total_price']]
+    bar_value_data.sort_values('Total_price', ascending=True, inplace=True)
+
+
     st.write(px.bar(bar_data.tail(10), x='Quantity', y='Category_name', orientation='h'))
+    st.write(px.bar(bar_value_data.tail(10), x='Total_price', y='Category_name', orientation='h'))
 
     return
 
