@@ -2,7 +2,8 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import geopandas as gpd
-from home_functions import show_timelines
+from utils.data_viz import show_timelines
+
 
 def get_info(rfm, customer_id, scaler, kmeans):
     col_names = ['Recency', 'Frequency', 'Monetary']
@@ -40,15 +41,17 @@ def compute_lifetime_value(df, df_lines, transformed_sales_filter):
     return cltv_df
 
 
-def customer_overview_data_function(rfm, df_sales, df_lines, product_clusters, category_clusters, product_grouped_df,
+def get_clusters(rfm, df_sales, df_lines, product_clusters, category_clusters, product_grouped_df,
                                     category_grouped_df, ml_clusters, segment_1_cluters, segment_2_cluters,
                                     transformed_sales_filter, show_full_dataframe=False):
     cltv_df = compute_lifetime_value(df_sales, df_lines, transformed_sales_filter)
 
     merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Customer_name', 'Cluster RFM', 'Segment 1', 'Segment 2']],
                          on='Customer_ID', how='inner')
-    merged_df = pd.merge(merged_df, product_clusters['Cluster MBA'], on='Customer_ID', how='inner').rename(columns={'Cluster MBA': 'Product Cluster MBA'})
-    merged_df = pd.merge(merged_df, category_clusters['Cluster MBA'], on='Customer_ID', how='inner').rename(columns={'Cluster MBA': 'Category Cluster MBA'})
+    merged_df = pd.merge(merged_df, product_clusters['Cluster MBA'], on='Customer_ID', how='inner').rename(
+        columns={'Cluster MBA': 'Product Cluster MBA'})
+    merged_df = pd.merge(merged_df, category_clusters['Cluster MBA'], on='Customer_ID', how='inner').rename(
+        columns={'Cluster MBA': 'Category Cluster MBA'})
 
     if show_full_dataframe:
         st.dataframe(merged_df, use_container_width=True)
@@ -61,13 +64,7 @@ def customer_overview_data_function(rfm, df_sales, df_lines, product_clusters, c
     product_grouped_df = product_grouped_df.reset_index().rename(columns={'Cluster MBA': 'Product Cluster MBA'})
     category_grouped_df = category_grouped_df.reset_index().rename(columns={'Cluster MBA': 'Category Cluster MBA'})
 
-    st.dataframe(ml_clusters)
-    st.dataframe(segment_1_cluters)
-    st.dataframe(segment_2_cluters)
-    st.dataframe(product_grouped_df)
-    st.dataframe(category_grouped_df)
-
-    return
+    return ml_clusters, segment_1_cluters, segment_2_cluters, product_grouped_df, category_grouped_df
 
 
 def get_map(directory, address, customer_id):
@@ -108,9 +105,9 @@ def get_map(directory, address, customer_id):
     return
 
 
-def customer_overview_main_function(directory, address, rfm, scaler, kmeans, average_clusters, df_sales, df_lines,
-                                    transformed_sales_filter):
-    cltv_df = compute_lifetime_value(df_sales, df_lines, transformed_sales_filter)
+def customer_overview_function(address, rfm, scaler, kmeans, df_sales,
+                                    df_lines, sales_filter, directory, snapshot_start_date, snapshot_end_date):
+    cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
     customer_id = st.selectbox('Customers', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
 
@@ -118,25 +115,52 @@ def customer_overview_main_function(directory, address, rfm, scaler, kmeans, ave
 
     customer_cluster, customer_segment_1, customer_segment_2 = get_info(rfm, customer_id, scaler, kmeans)
 
-    col1.metric('Customer cluster using ML', 'Cluster ' + str(customer_cluster[0]))
-    fig = px.line_polar(r=[average_clusters['Recency'][customer_cluster[0]],
-                           average_clusters['Frequency'][customer_cluster[0]],
-                           average_clusters['Monetary'][customer_cluster[0]]],
-                        theta=['Recency', 'Frequency', 'Monetary'], line_close=True, width=300, height=300)
+    col1.write('RFM clusters')
+    col1.metric('ML cluster', 'Cluster ' + str(customer_cluster[0]))
+    col1.metric('Segment 1', str(customer_segment_1.iloc[0]))
+    col1.metric('Segment 2', str(customer_segment_2.iloc[0]))
 
-    col1.write(fig)
-    col2.write('Customer segment using RFM score')
-    col2.metric('First approach', str(customer_segment_1.iloc[0]))
-    col2.metric('Second approach', str(customer_segment_2.iloc[0]))
-    col3.metric('Lifetime value', round(cltv_df[cltv_df.index == customer_id]['CLTV'], 2))
-    col3.metric('Median CLTV', round(cltv_df['CLTV'].median(), 2))
-    col3.metric('Average CLTV', round(cltv_df['CLTV'].mean(), 2))
+    col2.write('MBA clusters')
+    col2.metric('Product cluster', 0)
+    col2.metric('Category cluster', 0)
 
+    cltv = round(cltv_df[cltv_df['Customer_ID'] == customer_id]['CLTV'], 2)
+    mean_cltv = round(cltv_df['CLTV'].mean(), 2)
+    diff = round(cltv - mean_cltv, 2).values[0]
+    col3.metric('Lifetime value', cltv, diff)
 
     st.subheader('Timeline of Sales and Orders')
-    show_timelines(invoices[(invoices['Customer_ID'] == customer_id)],orders[(orders['Customer_ID'] == customer_id)],snapshot_start_date,snapshot_end_date)
+    path = './data/Glanum/' if directory == 'Glanum' else './data/IciStore/'
+    invoices = pd.read_csv(f'{path}/Invoices.csv')
+    orders = pd.read_csv(f'{path}/Orders.csv')
+
+    show_timelines(invoices[(invoices['Customer_ID'] == customer_id)],
+                   orders[(orders['Customer_ID'] == customer_id)], snapshot_start_date, snapshot_end_date)
 
     st.subheader('Customer Location')
     get_map(directory, address, customer_id)
 
+    return
+
+
+def customer_overview_main_function(address, rfm, scaler, kmeans, df_sales, df_lines, sales_filter, directory,
+                                    snapshot_start_date, snapshot_end_date):
+    customer_overview_tab, cluster_overview_tab, data_tab = st.tabs(['Customer overview', 'Cluster overview', 'Data'])
+    with customer_overview_tab:
+        customer_overview_function(address, rfm, scaler, kmeans, df_sales, df_lines, sales_filter, directory,
+                                   snapshot_start_date, snapshot_end_date)
+    with cluster_overview_tab:
+        st.write()
+    with data_tab:
+        st.write()
+
+        # ml_clusters, segment_1_cluters, segment_2_cluters, product_grouped_df, category_grouped_df = get_clusters(
+        #     rfm, df_sales, df_lines, product_clusters, category_clusters, product_grouped_df,
+        #     category_grouped_df, ml_clusters, segment_1_cluters, segment_2_cluters,
+        #     transformed_sales_filter, show_full_dataframe=False)
+        # st.dataframe(ml_clusters)
+        # st.dataframe(segment_1_cluters)
+        # st.dataframe(segment_2_cluters)
+        # st.dataframe(product_grouped_df)
+        # st.dataframe(category_grouped_df)
     return

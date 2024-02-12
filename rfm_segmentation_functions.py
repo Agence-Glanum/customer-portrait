@@ -446,4 +446,4 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
             segment_2_cluters = rfm.groupby(['Segment 2'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
             segment_2_details(segment_2_cluters)
 
-    return rfm, scaler, kmeans, average_clusters, ml_clusters, segment_1_cluters, segment_2_cluters
+    return rfm, scaler, kmeans, ml_clusters, segment_1_cluters, segment_2_cluters
