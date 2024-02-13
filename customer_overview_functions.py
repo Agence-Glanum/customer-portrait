@@ -42,8 +42,8 @@ def compute_lifetime_value(df, df_lines, transformed_sales_filter):
 
 
 def get_clusters(rfm, df_sales, df_lines, product_clusters, category_clusters, product_grouped_df,
-                                    category_grouped_df, ml_clusters, segment_1_cluters, segment_2_cluters,
-                                    transformed_sales_filter, show_full_dataframe=False):
+                 category_grouped_df, ml_clusters, segment_1_cluters, segment_2_cluters,
+                 transformed_sales_filter, show_full_dataframe=False):
     cltv_df = compute_lifetime_value(df_sales, df_lines, transformed_sales_filter)
 
     merged_df = pd.merge(cltv_df, rfm[['Customer_ID', 'Customer_name', 'Cluster RFM', 'Segment 1', 'Segment 2']],
@@ -68,13 +68,34 @@ def get_clusters(rfm, df_sales, df_lines, product_clusters, category_clusters, p
 
 
 def get_map(directory, address, customer_id):
-    customer_zip = address[address['Customer_ID'] == customer_id]
-    customer_zip.loc[:, 'Zip_code'] = customer_zip['Zip_code'].str[:2]
+    df_adresses = address
+    corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
 
-    if directory == 'Ici store':
+    selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
+    selected_entries["nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
+    selected_entries["code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+
+    df_adresses['Zip_code'] = df_adresses['Zip_code'].astype(str)
+    selected_entries['code_postal'] = selected_entries['code_postal'].astype(str)
+
+    df_adresses['Zip_code'] = df_adresses.apply(
+        lambda row: selected_entries.loc[
+            (selected_entries['code_postal'] == row['Zip_code']), 'code_commune_insee'].values[0]
+        if any(selected_entries['code_postal'] == row['Zip_code'])
+        else row['Zip_code'],
+        axis=1
+    )
+
+    customer_zip = df_adresses[df_adresses['Customer_ID'] == customer_id]
+    customer_zip.loc[:, 'Zip_code'] = customer_zip['Zip_code'].str[:2]
+    customer_zip["City"] = customer_zip["City"].str.replace(" ", "-").str.capitalize()
+
+    if (customer_zip["Country"] == "FR").any():
         geojson_france = './utils/Geo/contour-des-departements.geojson'
         gdf_departements = gpd.read_file(geojson_france)
+
         france_map = px.choropleth_mapbox(customer_zip, geojson=gdf_departements, locations='Zip_code',
+                                          featureidkey='properties.code',
                                           color='Zip_code',
                                           color_continuous_scale='Viridis',
                                           range_color=(0, 12),
@@ -84,29 +105,28 @@ def get_map(directory, address, customer_id):
                                           )
         france_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
         st.write(france_map)
-    else:
-        st.info('This feature is not ready yet.')
-        # geojson_world = './utils/Geo/curiexplore-pays.geojson'
-        # gdf_departements2 = gpd.read_file(geojson_world)
-        # gdf_occurences2 = gdf_departements2.merge(customer_zip['Country'], how='left', left_on='code',
-        #                                           right_on='Country')
-        # gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
-        # world_map = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
-        #                                  featureidkey='properties.code',
-        #                                  color_continuous_scale='Viridis',
-        #                                  range_color=(0, 12),
-        #                                  mapbox_style='carto-positron',
-        #                                  zoom=1, center={'lat': 46.6031, 'lon': 1.8883},
-        #                                  opacity=0.8,
-        #                                  )
-        # world_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
-        # st.write(world_map)
 
+    else:
+        geojson_world = './utils/Geo/curiexplore-pays.geojson'
+        gdf_departements2 = gpd.read_file(geojson_world)
+        gdf_occurences2 = gdf_departements2.merge(customer_zip['Country'], how='left', left_on='code',
+                                                  right_on='Country')
+        gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
+        world_map = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
+                                         featureidkey='properties.code',
+                                         color_continuous_scale='Viridis',
+                                         range_color=(0, 12),
+                                         mapbox_style='carto-positron',
+                                         zoom=1, center={'lat': 46.6031, 'lon': 1.8883},
+                                         opacity=0.8,
+                                         )
+        world_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
+        st.write(world_map)
     return
 
 
 def customer_overview_function(address, rfm, scaler, kmeans, df_sales,
-                                    df_lines, sales_filter, directory, snapshot_start_date, snapshot_end_date):
+                               df_lines, sales_filter, directory, snapshot_start_date, snapshot_end_date):
     cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
     customer_id = st.selectbox('Customers', (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
