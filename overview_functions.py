@@ -40,7 +40,7 @@ def customer_overview_function(address, overview_data, directory, snapshot_start
     return
 
 
-def cluster_overview_function(address, overview_data, directory):
+def cluster_overview_function(address, overview_data):
     global_mean_cltv = overview_data['CLTV'].mean()
 
     col1, col2 = st.columns(2)
@@ -98,7 +98,7 @@ def overview_main_function(address, overview_data, ml_clusters, segment_1_cluste
         show_details()
 
     with cluster_overview_tab:
-        cluster_overview_function(address, overview_data, directory)
+        cluster_overview_function(address, overview_data)
         show_details()
     with data_tab:
         with st.expander('Customers data'):
