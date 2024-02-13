@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np
+import plotly.graph_objects as go
 import streamlit as st
 from utils.data_viz import show_timelines
 from utils.utility_functions import get_customer_location, get_cluster_location
@@ -50,21 +50,29 @@ def cluster_overview_function(address, overview_data, directory):
     cluster_id = col2.selectbox('Cluster', cluster_ids)
 
     overview_data = overview_data[overview_data[cluster_type] == cluster_id]
-    st.dataframe(overview_data[['Cluster RFM', 'Segment 1', 'Segment 2', 'Product cluster MBA', 'Category cluster MBA', 'CLTV']])
+    st.dataframe(
+        overview_data[['Cluster RFM', 'Segment 1', 'Segment 2', 'Product cluster MBA', 'Category cluster MBA', 'CLTV']])
 
     st.subheader("Quick recap", divider='grey')
-    st.write(f"- **Customers**: {len(overview_data)}")
+    col1, col2 = st.columns(2)
+    col1.write(f"- **Customers**: {len(overview_data)}")
     local_mean_cltv = overview_data['CLTV'].mean()
-    st.write(f"- **Average CLTV**: {round(local_mean_cltv, 2)} "
-             f" ({str(round((local_mean_cltv - global_mean_cltv) / global_mean_cltv * 100, 2)) + ' %'})")
+    col2.write(f"- **Average CLTV**: {round(local_mean_cltv, 2)} "
+               f" ({str(round((local_mean_cltv - global_mean_cltv) / global_mean_cltv * 100, 2)) + ' %'})")
     for column in column_names:
-        st.write(f"**{column}**:")
         unique_values = overview_data[column].unique()
-        total_entries = len(overview_data[column])
+
+        labels = []
+        values = []
+
         for value in unique_values:
             count = (overview_data[column] == value).sum()
-            proportion = count / total_entries
-            st.write(f"- {value}: {count} ({proportion:.2%})")
+            labels.append(f"Cluster {value}")
+            values.append(count)
+
+        fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
+        fig.update_layout(title=f'Distribution of Clusters for {column}')
+        st.plotly_chart(fig)
 
     st.subheader('Cluster Location')
     get_cluster_location(directory, address, cluster_id)
@@ -73,10 +81,11 @@ def cluster_overview_function(address, overview_data, directory):
 
 
 def overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
-                           product_grouped_df, category_grouped_df, directory, snapshot_start_date, snapshot_end_date):
-    customer_overview_tab, cluster_overview_tab, data_tab = st.tabs(['Customer overview', 'Cluster overview', 'Data'])
-    with customer_overview_tab:
-        customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date)
+                           product_grouped_df, category_grouped_df, product_recommendation, category_recommendation,
+                           directory, snapshot_start_date, snapshot_end_date):
+    customer_overview_tab, cluster_overview_tab, data_tab = st.tabs(['Customer overview', 'Cluster overview', 'Download data'])
+
+    def show_details():
         with st.expander('Details about the clusters'):
             st.dataframe(ml_clusters)
             st.dataframe(segment_1_clusters)
@@ -84,13 +93,20 @@ def overview_main_function(address, overview_data, ml_clusters, segment_1_cluste
             st.dataframe(product_grouped_df)
             st.dataframe(category_grouped_df)
 
+    with customer_overview_tab:
+        customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date)
+        show_details()
+
     with cluster_overview_tab:
         cluster_overview_function(address, overview_data, directory)
+        show_details()
     with data_tab:
-        st.dataframe(overview_data)
-        st.dataframe(ml_clusters)
-        st.dataframe(segment_1_clusters)
-        st.dataframe(segment_2_clusters)
-        st.dataframe(product_grouped_df)
-        st.dataframe(category_grouped_df)
+        with st.expander('Customers data'):
+            st.dataframe(overview_data)
+        with st.expander('Recommendation'):
+            st.subheader('For products', divider='grey')
+            st.dataframe(product_recommendation)
+            st.subheader('For categories', divider='grey')
+            st.dataframe(category_recommendation)
+        show_details()
     return

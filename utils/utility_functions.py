@@ -3,6 +3,28 @@ import plotly.express as px
 import geopandas as gpd
 
 
+def compute_kpis(invoices, orders, categories, products, cltv_df):
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric('Customers', invoices['Customer_ID'].nunique())
+    col1.metric('Categories Count', str(len(categories)))
+    col1.metric('Products Count', str(len(products)))
+    col1.metric('Lifetime value', str(round(cltv_df['CLTV'].mean(), 2)))
+
+    valid_orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')]
+    col2.metric('Orders', valid_orders['Order_ID'].nunique())
+    col2.metric('Minimum orders Value', str(round(valid_orders['Total_price'].min(), 2)) + '€')
+    col2.metric('Average Order Value', str(round(valid_orders['Total_price'].mean(), 2)) + '€')
+    col2.metric('Maximum orders Value', str(round(valid_orders['Total_price'].max(), 2)) + '€')
+
+    col3.metric('Invoices', invoices['Invoice_ID'].nunique())
+    col3.metric('Minimum Invoice Value', str(round(invoices['Total_price'].min(), 2)) + '€')
+    col3.metric('Average Invoice Value', str(round(invoices['Total_price'].mean(), 2)) + '€')
+    col3.metric('Maximum Invoice Value', str(round(invoices['Total_price'].max(), 2)) + '€')
+
+    return
+
+
 def compute_lifetime_value(df, df_lines, sales_filter):
     df_final = df.merge(df_lines, left_on=sales_filter + '_ID', right_on=sales_filter + '_ID')
 

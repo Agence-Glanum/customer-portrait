@@ -1,6 +1,20 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+
+def show_boxplot(invoices, orders):
+    fig = make_subplots(rows=1, cols=1)
+
+    fig.add_trace(go.Box(x=invoices['Total_price'], name='Invoices'))
+    fig.add_trace(go.Box(x=orders['Total_price'], name='Orders'))
+    fig.update_layout(xaxis_title='Monetary value')
+    fig.update_layout(showlegend=True)
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    return
 
 
 def show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date):

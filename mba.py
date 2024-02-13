@@ -1,6 +1,11 @@
 import pandas as pd
 import streamlit as st
 
+from mba_statistics import mba_statistics_main_function
+from most_frequent_pattern import most_frequent_pattern_main_function
+from next_product_prediction import next_prod_pred_main_function
+from product_affinity_functions import prod_aff_main_function
+
 
 def agg_product_ids(product_ids):
     return [pid for pid in product_ids if pd.notna(pid) and pid != '']
@@ -36,7 +41,7 @@ def show_mba(directory, products, product_clusters, category_clusters, apriori_r
 
         product_clusters = product_clusters.rename(columns=product_dic)
 
-        st.info('The product and category clusters not the same !')
+        st.info('The product and category clusters are not the same !')
 
         product_melted_df = pd.melt(product_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
                                     var_name='product', value_name='spending')
@@ -50,19 +55,46 @@ def show_mba(directory, products, product_clusters, category_clusters, apriori_r
 
         with st.expander('Product Clusters'):
             st.dataframe(product_clusters)
-            st.write(product_grouped_df)
+            st.dataframe(product_grouped_df)
 
         with st.expander('Category Clusters'):
             st.dataframe(category_clusters)
-            st.write(category_grouped_df)
+            st.dataframe(category_grouped_df)
 
         with st.expander('Recommendations'):
             st.subheader('Product recommendation')
-            st.dataframe(apriori_rules_products[['antecedents_', 'consequents_']])
+            product_recommendation = apriori_rules_products[['antecedents_', 'consequents_']]
+            st.dataframe(product_recommendation)
             # st.dataframe(fpgrowth_rules_products[['antecedents_', 'consequents_']])
             st.subheader('Category recommendation')
-            st.dataframe(apriori_rules_categories[['antecedents_', 'consequents_']])
+            category_recommendation = apriori_rules_categories[['antecedents_', 'consequents_']]
+            st.dataframe(category_recommendation)
             # st.dataframe(fpgrowth_rules_categories[['antecedents_', 'consequents_']])
     else:
         st.info('This feature is not ready yet.')
-    return product_grouped_df, category_grouped_df
+    return product_grouped_df, category_grouped_df, product_recommendation, category_recommendation
+
+
+def mba_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
+                      snapshot_end_date, directory, sales_filter):
+    mba_statistics, prod_aff_tab, most_freq_tab, product_pred_tab, data_tab = st.tabs(
+        ['Statistics', 'Product affinity', 'Most Frequent Pattern', 'Next product prediction', 'Download data'])
+    with mba_statistics:
+        mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
+                                     snapshot_end_date, directory, sales_filter)
+    with prod_aff_tab:
+        product_clusters, category_clusters = prod_aff_main_function(df_sales, df_lines, categories, products,
+                                                                     directory, snapshot_start_date,
+                                                                     snapshot_end_date, sales_filter)
+    with most_freq_tab:
+        apriori_rules_products, fpgrowth_rules_products, apriori_rules_categories, fpgrowth_rules_categories = most_frequent_pattern_main_function(
+            df_lines, products, categories,
+            sales_filter)
+    with product_pred_tab:
+        next_prod_pred_main_function(apriori_rules_products, fpgrowth_rules_products, products)
+    with data_tab:
+        product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = show_mba(
+            directory, products, product_clusters, category_clusters,
+            apriori_rules_products, fpgrowth_rules_products,
+            apriori_rules_categories, fpgrowth_rules_categories)
+    return product_clusters, category_clusters, product_grouped_df, category_grouped_df, product_recommendation, category_recommendation

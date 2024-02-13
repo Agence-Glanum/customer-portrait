@@ -1,15 +1,12 @@
 import datetime
 import pandas as pd
 import streamlit as st
-from mba import show_mba
-from home_functions import show_eda
-from product_affinity_functions import prod_aff_main_function
+from mba import mba_main_function
+from home_functions import home_main_function
 from rfm_segmentation_functions import rfm_main_function
-from most_frequent_pattern import most_frequent_pattern_main_function
 from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
 from overview_functions import overview_main_function
-from next_product_prediction import next_prod_pred_main_function
 from utils.authentification import get_auth_status, render_login_form, get_user_type, logout
 from utils.utility_functions import compute_lifetime_value
 
@@ -65,7 +62,7 @@ def data_main():
     if not df_sales.empty and not df_lines.empty:
         with home_tab:
             cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
-            show_eda(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
+            home_main_function(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
 
         with geo_tab:
             st.write('Map')
@@ -76,25 +73,9 @@ def data_main():
                 snapshot_start_date, sales_filter)
 
         with mba_tab:
-            mba_statistics, prod_aff_tab, most_freq_tab, product_pred_tab, data_tab = st.tabs(
-                ['Statistics', 'Product affinity', 'Most Frequent Pattern', 'Next product prediction', 'Data'])
-            with mba_statistics:
-                mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
-                                             snapshot_end_date, directory, sales_filter)
-            with prod_aff_tab:
-                product_clusters, category_clusters = prod_aff_main_function(df_sales, df_lines, categories, products,
-                                                                             directory, snapshot_start_date,
-                                                                             snapshot_end_date, sales_filter)
-            with most_freq_tab:
-                apriori_rules_products, fpgrowth_rules_products, apriori_rules_categories, fpgrowth_rules_categories = most_frequent_pattern_main_function(
-                    df_lines, products, categories,
-                    sales_filter)
-            with product_pred_tab:
-                next_prod_pred_main_function(apriori_rules_products, fpgrowth_rules_products, products)
-            with data_tab:
-                product_grouped_df, category_grouped_df = show_mba(directory, products, product_clusters, category_clusters,
-                                                                   apriori_rules_products, fpgrowth_rules_products,
-                                                                   apriori_rules_categories, fpgrowth_rules_categories)
+            product_clusters, category_clusters, product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = mba_main_function(
+                df_sales, df_lines, products, categories, snapshot_start_date,
+                snapshot_end_date, directory, sales_filter)
 
         with customer_tab:
             overview_data = pd.merge(rfm, product_clusters.reset_index()[['Customer_ID', 'Cluster MBA']],
@@ -105,8 +86,18 @@ def data_main():
             overview_data = overview_data.rename(columns={'Cluster MBA': 'Category cluster MBA'})
             overview_data = pd.merge(overview_data, cltv_df, on='Customer_ID')
 
+            overview_data.to_csv('./data/Results/overview_data.csv', index=False)
+            ml_clusters.to_csv('./data/Results/ml_clusters.csv', index=False)
+            segment_1_clusters.to_csv('./data/Results/segment_1_clusters.csv', index=False)
+            segment_2_clusters.to_csv('./data/Results/segment_2_clusters.csv', index=False)
+            product_grouped_df.to_csv('./data/Results/product_grouped_df.csv', index=False)
+            category_grouped_df.to_csv('./data/Results/category_grouped_df.csv', index=False)
+            product_recommendation.to_csv('./data/Results/product_recommendation.csv', index=False)
+            category_recommendation.to_csv('./data/Results/category_recommendation.csv', index=False)
+
             overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
-                                   product_grouped_df, category_grouped_df, directory, snapshot_start_date, snapshot_end_date)
+                                   product_grouped_df, category_grouped_df, product_recommendation,
+                                   category_recommendation, directory, snapshot_start_date, snapshot_end_date)
 
     else:
         st.error('No data available for the selected time period !')
@@ -119,8 +110,7 @@ def marketing_main():
                                                                                                            snapshot_start_date,
                                                                                                            snapshot_end_date,
                                                                                                            directory)
-    statistics_tab, rfm_tab, mba_tab, cluster_tab = st.tabs(
-        ['Statistics', 'RFM Results', 'MBA Results', 'Overview'])
+    statistics_tab, overview_tab = st.tabs(['Statistics', 'Overview'])
 
     df_sales, df_lines = invoices, invoices_lines
     if sales_filter == 'Invoice':
@@ -132,6 +122,30 @@ def marketing_main():
         df_sales = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
                           & (orders['Total_price'] > 0) & (orders['Customer_ID'] is not None)]
         df_lines = orders_lines[(orders_lines['Quantity'] > 0) & (orders_lines['Total_price'] > 0)]
+
+    if not df_sales.empty and not df_lines.empty:
+        with statistics_tab:
+            cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
+            home_main_function(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
+            mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
+                                         snapshot_end_date, directory, sales_filter)
+
+        with overview_tab:
+            overview_data = pd.read_csv('./data/Results/overview_data.csv')
+            ml_clusters = pd.read_csv('./data/Results/ml_clusters.csv')
+            segment_1_clusters = pd.read_csv('./data/Results/segment_1_clusters.csv')
+            segment_2_clusters = pd.read_csv('./data/Results/segment_2_clusters.csv')
+            product_grouped_df = pd.read_csv('./data/Results/product_grouped_df.csv')
+            category_grouped_df = pd.read_csv('./data/Results/category_grouped_df.csv')
+            product_recommendation = pd.read_csv('./data/Results/product_recommendation.csv')
+            category_recommendation = pd.read_csv('./data/Results/category_recommendation.csv')
+
+            overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
+                                   product_grouped_df, category_grouped_df, product_recommendation,
+                                   category_recommendation, directory, snapshot_start_date, snapshot_end_date)
+
+    else:
+        st.error('No data available for the selected time period !')
 
     return
 
