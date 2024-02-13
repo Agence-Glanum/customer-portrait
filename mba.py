@@ -32,46 +32,42 @@ def show_data(categories, products, directory, snapshot_start_date, snapshot_end
     return result_df
 
 
-def show_mba(directory, products, product_clusters, category_clusters, apriori_rules_products, fpgrowth_rules_products,
+def show_mba(products, product_clusters, category_clusters, apriori_rules_products, fpgrowth_rules_products,
              apriori_rules_categories, fpgrowth_rules_categories):
-    if directory == 'Ici store':
-        product_ids = [int(col) for col in product_clusters.columns if col != 'Cluster MBA']
-        product_dic = {str(col): products.loc[products['Product_ID'] == col, 'Product_name'].values[0] for col in
-                       product_ids}
+    product_ids = [col for col in product_clusters.columns if col != 'Cluster MBA']
+    # product_dic = {col: products[products['Product_ID'] == col]['Product_name'] for col in
+    #                product_ids}
+    # product_clusters = product_clusters.rename(columns=product_dic)
 
-        product_clusters = product_clusters.rename(columns=product_dic)
+    st.info('The product and category clusters are not the same !')
 
-        st.info('The product and category clusters are not the same !')
+    product_melted_df = pd.melt(product_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
+                                var_name='product', value_name='spending')
+    product_melted_df = product_melted_df[product_melted_df['spending'] > 0]
+    product_grouped_df = product_melted_df.groupby('Cluster MBA')['product'].apply(lambda x: list(set(x)))
 
-        product_melted_df = pd.melt(product_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
-                                    var_name='product', value_name='spending')
-        product_melted_df = product_melted_df[product_melted_df['spending'] > 0]
-        product_grouped_df = product_melted_df.groupby('Cluster MBA')['product'].apply(lambda x: list(set(x)))
+    category_melted_df = pd.melt(category_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
+                                 var_name='category', value_name='spending')
+    category_melted_df = category_melted_df[category_melted_df['spending'] > 0]
+    category_grouped_df = category_melted_df.groupby('Cluster MBA')['category'].apply(lambda x: list(set(x)))
 
-        category_melted_df = pd.melt(category_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
-                                     var_name='category', value_name='spending')
-        category_melted_df = category_melted_df[category_melted_df['spending'] > 0]
-        category_grouped_df = category_melted_df.groupby('Cluster MBA')['category'].apply(lambda x: list(set(x)))
+    with st.expander('Product Clusters'):
+        st.dataframe(product_clusters)
+        st.dataframe(product_grouped_df)
 
-        with st.expander('Product Clusters'):
-            st.dataframe(product_clusters)
-            st.dataframe(product_grouped_df)
+    with st.expander('Category Clusters'):
+        st.dataframe(category_clusters)
+        st.dataframe(category_grouped_df)
 
-        with st.expander('Category Clusters'):
-            st.dataframe(category_clusters)
-            st.dataframe(category_grouped_df)
-
-        with st.expander('Recommendations'):
-            st.subheader('Product recommendation')
-            product_recommendation = apriori_rules_products[['antecedents_', 'consequents_']]
-            st.dataframe(product_recommendation)
-            # st.dataframe(fpgrowth_rules_products[['antecedents_', 'consequents_']])
-            st.subheader('Category recommendation')
-            category_recommendation = apriori_rules_categories[['antecedents_', 'consequents_']]
-            st.dataframe(category_recommendation)
-            # st.dataframe(fpgrowth_rules_categories[['antecedents_', 'consequents_']])
-    else:
-        st.info('This feature is not ready yet.')
+    with st.expander('Recommendations'):
+        st.subheader('Product recommendation')
+        product_recommendation = apriori_rules_products[['antecedents_', 'consequents_']]
+        st.dataframe(product_recommendation)
+        # st.dataframe(fpgrowth_rules_products[['antecedents_', 'consequents_']])
+        st.subheader('Category recommendation')
+        category_recommendation = apriori_rules_categories[['antecedents_', 'consequents_']]
+        st.dataframe(category_recommendation)
+        # st.dataframe(fpgrowth_rules_categories[['antecedents_', 'consequents_']])
     return product_grouped_df, category_grouped_df, product_recommendation, category_recommendation
 
 
@@ -94,7 +90,7 @@ def mba_main_function(df_sales, df_lines, products, categories, snapshot_start_d
         next_prod_pred_main_function(apriori_rules_products, fpgrowth_rules_products, products)
     with data_tab:
         product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = show_mba(
-            directory, products, product_clusters, category_clusters,
+            products, product_clusters, category_clusters,
             apriori_rules_products, fpgrowth_rules_products,
             apriori_rules_categories, fpgrowth_rules_categories)
     return product_clusters, category_clusters, product_grouped_df, category_grouped_df, product_recommendation, category_recommendation
