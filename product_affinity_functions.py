@@ -16,16 +16,16 @@ from sklearn.metrics import make_scorer
 
 def clean_data(categories, products, df_sales, df_lines, transformed_sales_filter):
     df = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID')
-    df = df[['Product_ID', 'Customer_ID', 'Total_price_y']]
-    df = df.groupby(['Customer_ID', 'Product_ID'])['Total_price_y'].sum().reset_index()
-    df = df.pivot(index='Customer_ID', columns='Product_ID', values='Total_price_y').fillna(0.0)
+    df = df[['Product_ID', 'Customer_ID', 'Quantity']]
+    df = df.groupby(['Customer_ID', 'Product_ID'])['Quantity'].sum().reset_index()
+    df = df.pivot(index='Customer_ID', columns='Product_ID', values='Quantity').fillna(0.0)
     df.columns = [str(col) for col in df.columns]
 
     df_cat = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID').merge(products, on='Product_ID').merge(
         categories, on='Category_ID')
-    df_cat = df_cat[['Product_ID', 'Category_name', 'Customer_ID', 'Total_price_y']]
-    df_cat = df_cat.groupby(['Customer_ID', 'Category_name'])['Total_price_y'].sum().reset_index()
-    df_cat = df_cat.pivot(index='Customer_ID', columns='Category_name', values='Total_price_y').fillna(0.0)
+    df_cat = df_cat[['Product_ID', 'Category_name', 'Customer_ID', 'Quantity']]
+    df_cat = df_cat.groupby(['Customer_ID', 'Category_name'])['Quantity'].sum().reset_index()
+    df_cat = df_cat.pivot(index='Customer_ID', columns='Category_name', values='Quantity').fillna(0.0)
     df_cat.columns = [str(col) for col in df_cat.columns]
 
     return df, df_cat
