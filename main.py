@@ -86,7 +86,7 @@ def data_main():
             overview_data = overview_data.rename(columns={'Cluster MBA': 'Category cluster MBA'})
             overview_data = pd.merge(overview_data, cltv_df, on='Customer_ID')
 
-            overview_data.to_csv('./data/Results/overview_data.csv', index=False)
+            overview_data.to_csv('./Results/overview_data.csv', index=False)
             ml_clusters.to_csv('./Results/ml_clusters.csv', index=False)
             segment_1_clusters.to_csv('./Results/segment_1_clusters.csv', index=False)
             segment_2_clusters.to_csv('./Results/segment_2_clusters.csv', index=False)

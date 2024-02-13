@@ -35,7 +35,7 @@ def customer_overview_function(address, overview_data, directory, snapshot_start
                    orders[(orders['Customer_ID'] == customer_id)], snapshot_start_date, snapshot_end_date)
 
     st.subheader('Customer Location')
-    get_customer_location(directory, address, customer_id)
+    get_customer_location(address, customer_id)
 
     return
 
@@ -75,7 +75,7 @@ def cluster_overview_function(address, overview_data, directory):
         st.plotly_chart(fig)
 
     st.subheader('Cluster Location')
-    get_cluster_location(directory, address, cluster_id)
+    get_cluster_location(address, cluster_id)
 
     return
 
