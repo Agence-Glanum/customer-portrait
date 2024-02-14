@@ -13,7 +13,7 @@ def recommend_product(df, product):  # num_of_products
         return 'No recommendation available'
 
 
-def next_prod_pred_main_function(apriori_rules, fpgrowth_rules, products):
+def next_prod_pred_main_function(df_sales, df_lines, apriori_rules, fpgrowth_rules, products, categories):
     product = st.selectbox('Choose a product', products['Product_name'])
 
     st.header('Product recommendation', divider='grey')
