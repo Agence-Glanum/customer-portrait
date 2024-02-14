@@ -87,7 +87,7 @@ def mba_main_function(df_sales, df_lines, products, categories, snapshot_start_d
             df_lines, products, categories,
             sales_filter)
     with product_pred_tab:
-        next_prod_pred_main_function(apriori_rules_products, fpgrowth_rules_products, products)
+        next_prod_pred_main_function(df_sales, df_lines, apriori_rules_products, fpgrowth_rules_products, products, categories)
     with data_tab:
         product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = show_mba(
             products, product_clusters, category_clusters,

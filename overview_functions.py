@@ -101,6 +101,17 @@ def overview_main_function(address, overview_data, ml_clusters, segment_1_cluste
         cluster_overview_function(address, overview_data)
         show_details()
     with data_tab:
+        if st.button('Send Data to team Marketing', type='primary'):
+            overview_data.to_csv('./overview_data.csv', index=False)
+            ml_clusters.to_csv('./ml_clusters.csv', index=False)
+            segment_1_clusters.to_csv('./segment_1_clusters.csv', index=False)
+            segment_2_clusters.to_csv('./segment_2_clusters.csv', index=False)
+            product_grouped_df.to_csv('./product_grouped_df.csv', index=False)
+            category_grouped_df.to_csv('./category_grouped_df.csv', index=False)
+            product_recommendation.to_csv('./product_recommendation.csv', index=False)
+            category_recommendation.to_csv('./category_recommendation.csv', index=False)
+            st.success('All the Data has been successfully sent !', icon="✅")
+
         with st.expander('Customers data'):
             st.dataframe(overview_data)
         with st.expander('Recommendation'):
