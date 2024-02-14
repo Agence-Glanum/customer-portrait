@@ -50,13 +50,24 @@ def get_dates(directory):
     return DATE_MIN, DATE_MAX
 
 
-def filter_data(client_type, snapshot_start_date, snapshot_end_date, directory):
+def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_date, directory):
     addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
 
     customers = customers[customers['Customer_type'] == client_type]
     addresses = addresses[addresses['Customer_ID'].isin(customers['Customer_ID'])]
+
     invoices = invoices[invoices['Customer_ID'].isin(customers['Customer_ID'])]
+    invoices_lines = invoices_lines[invoices_lines['Invoice_ID'].isin(invoices['Invoice_ID'])]
+
     orders = orders[orders['Customer_ID'].isin(customers['Customer_ID'])]
+    orders_lines = orders_lines[orders_lines['Order_ID'].isin(orders['Order_ID'])]
+
+    if sales_filter == 'Invoice':
+        products = products[products['Product_ID'].isin(invoices_lines['Product_ID'])]
+        categories = categories[categories['Category_ID'].isin(products['Category_ID'])]
+    else:
+        products = products[products['Product_ID'].isin(orders_lines['Product_ID'])]
+        categories = categories[categories['Category_ID'].isin(products['Category_ID'])]
 
     start_date = datetime.datetime(snapshot_start_date.year, snapshot_start_date.month, snapshot_start_date.day)
     end_date = datetime.datetime(snapshot_end_date.year, snapshot_end_date.month, snapshot_end_date.day)

@@ -42,6 +42,7 @@ def get_filters(flag):
 def data_main():
     directory, sales_filter, client_type, snapshot_start_date, snapshot_end_date = get_filters(False)
     address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(client_type,
+                                                                                                           sales_filter,
                                                                                                            snapshot_start_date,
                                                                                                            snapshot_end_date,
                                                                                                            directory)
