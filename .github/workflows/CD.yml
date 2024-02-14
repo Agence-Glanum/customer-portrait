@@ -47,6 +47,7 @@ jobs:
     -
       name: Connect to VPN
       run: |
+        sudo apt-get update
         sudo apt-get install openconnect network-manager-openconnect network-manager-openconnect-gnome
         echo "${{ secrets.VPN_PWD }}" | sudo openconnect -u ${{ secrets.VPN_USER }} --passwd-on-stdin --protocol=fortinet ${{ secrets.VPN_HOST }}:${{ secrets.VPN_PORT }} --servercert ${{ secrets.VPN_SERVERCERT }} &
     -
