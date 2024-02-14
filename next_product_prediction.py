@@ -17,8 +17,9 @@ def next_prod_pred_main_function(apriori_rules, fpgrowth_rules, products):
     product = st.selectbox('Choose a product', products['Product_name'])
 
     st.header('Product recommendation', divider='grey')
-    st.subheader('First approach - Apriori')
-    st.write(recommend_product(apriori_rules, product))
+    with st.expander('Apriori and FP growth approaches'):
+        st.subheader('First approach - Apriori')
+        st.write(recommend_product(apriori_rules, product))
 
     st.subheader('Second approach - FP growth')
     st.write(recommend_product(fpgrowth_rules, product))
