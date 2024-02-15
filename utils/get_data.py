@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def get_data_from_csv(directory):
-    path = './data/Glanum/' if directory == 'Glanum' else './data/IciStore/'
+    path = './data/' + directory
     address = pd.read_csv(f'{path}/Addresses.csv')
     categories = pd.read_csv(f'{path}/Categories.csv')
     customer = pd.read_csv(f'{path}/Customers.csv')
