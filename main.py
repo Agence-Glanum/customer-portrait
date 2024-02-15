@@ -20,7 +20,7 @@ def get_folder_names(directory):
     return folder_names
 
 
-def get_filters(flag):
+def get_filters():
     with st.sidebar:
         if get_auth_status():
             st.button('Logout', on_click=logout)
@@ -28,7 +28,7 @@ def get_filters(flag):
         companies = get_folder_names('./data')
 
         directory = st.selectbox(
-            'Choose which data to analyse', companies, disabled=flag)
+            'Choose which data to analyse', companies)
 
         sales_filter = st.radio(
             'Analyze your sales based on',
@@ -50,7 +50,7 @@ def get_filters(flag):
 
 
 def data_main():
-    directory, sales_filter, customer_type, snapshot_start_date, snapshot_end_date = get_filters(False)
+    directory, sales_filter, customer_type, snapshot_start_date, snapshot_end_date = get_filters()
     address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(customer_type,
                                                                                                            sales_filter,
                                                                                                            snapshot_start_date,
@@ -97,18 +97,10 @@ def data_main():
             overview_data = overview_data.rename(columns={'Cluster MBA': 'Category cluster MBA'})
             overview_data = pd.merge(overview_data, cltv_df, on='Customer_ID')
 
-            overview_data.to_csv('./overview_data_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-            ml_clusters.to_csv('./ml_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-            segment_1_clusters.to_csv('./segment_1_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-            segment_2_clusters.to_csv('./segment_2_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-            product_grouped_df.to_csv('./product_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-            category_grouped_df.to_csv('./category_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-            product_recommendation.to_csv('./product_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-            category_recommendation.to_csv('./category_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
-
             overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
                                    product_grouped_df, category_grouped_df, product_recommendation,
-                                   category_recommendation, directory, snapshot_start_date, snapshot_end_date)
+                                   category_recommendation, directory, snapshot_start_date, snapshot_end_date, True,
+                                   sales_filter, customer_type)
 
     else:
         st.error('No data available for the selected time period !')
@@ -116,7 +108,7 @@ def data_main():
 
 
 def marketing_main():
-    directory, sales_filter, customer_type, snapshot_start_date, snapshot_end_date = get_filters(True)
+    directory, sales_filter, customer_type, snapshot_start_date, snapshot_end_date = get_filters()
     address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(customer_type,
                                                                                                            sales_filter,
                                                                                                            snapshot_start_date,
@@ -144,18 +136,18 @@ def marketing_main():
 
         with overview_tab:
             try:
-                overview_data = pd.read_csv('overview_data_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
-                ml_clusters = pd.read_csv('ml_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
-                segment_1_clusters = pd.read_csv('segment_1_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
-                segment_2_clusters = pd.read_csv('segment_2_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
-                product_grouped_df = pd.read_csv('product_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
-                category_grouped_df = pd.read_csv('category_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
-                product_recommendation = pd.read_csv('product_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
-                category_recommendation = pd.read_csv('category_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                overview_data = pd.read_csv('./Results/overview_data_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                ml_clusters = pd.read_csv('./Results/ml_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                segment_1_clusters = pd.read_csv('./Results/segment_1_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                segment_2_clusters = pd.read_csv('./Results/segment_2_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                product_grouped_df = pd.read_csv('./Results/product_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                category_grouped_df = pd.read_csv('./Results/category_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                product_recommendation = pd.read_csv('./Results/product_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                category_recommendation = pd.read_csv('./Results/category_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
 
                 overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
                                        product_grouped_df, category_grouped_df, product_recommendation,
-                                       category_recommendation, directory, snapshot_start_date, snapshot_end_date)
+                                       category_recommendation, directory, snapshot_start_date, snapshot_end_date, False, sales_filter, customer_type)
             except FileNotFoundError:
                 st.error('The Data team hasn\'t sent any data yet !')
 
