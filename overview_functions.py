@@ -1,6 +1,6 @@
 import pandas as pd
-import plotly.graph_objects as go
 import streamlit as st
+import plotly.graph_objects as go
 from utils.data_viz import show_timelines
 from utils.utility_functions import get_customer_location, get_cluster_location
 
@@ -27,7 +27,7 @@ def customer_overview_function(address, overview_data, directory, snapshot_start
                 str(round((overview_data['CLTV'].values[0] - mean_cltv) / mean_cltv * 100, 2)) + ' %')
 
     st.subheader('Timeline of Sales and Orders')
-    path = './data/Glanum/' if directory == 'Glanum' else './data/IciStore/'
+    path = './data/' + directory
     invoices = pd.read_csv(f'{path}/Invoices.csv')
     orders = pd.read_csv(f'{path}/Orders.csv')
 
@@ -75,6 +75,7 @@ def cluster_overview_function(address, overview_data):
         st.plotly_chart(fig)
 
     st.subheader('Cluster Location')
+    st.error('A revoir')
     get_cluster_location(address, cluster_id)
 
     return

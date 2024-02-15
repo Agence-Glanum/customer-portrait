@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 
 
@@ -21,7 +22,7 @@ def next_prod_pred_main_function(df_sales, df_lines, apriori_rules, fpgrowth_rul
         st.subheader('First approach - Apriori')
         st.write(recommend_product(apriori_rules, product))
 
-    st.subheader('Second approach - FP growth')
-    st.write(recommend_product(fpgrowth_rules, product))
+        st.subheader('Second approach - FP growth')
+        st.write(recommend_product(fpgrowth_rules, product))
 
     return
