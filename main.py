@@ -9,6 +9,15 @@ from utils.get_data import filter_data, get_dates
 from overview_functions import overview_main_function
 from utils.authentification import get_auth_status, render_login_form, get_user_type, logout
 from utils.utility_functions import compute_lifetime_value
+import os
+
+
+def get_folder_names(directory):
+    folder_names = []
+    for item in os.listdir(directory):
+        if os.path.isdir(os.path.join(directory, item)):
+            folder_names.append(item)
+    return folder_names
 
 
 def get_filters(flag):
@@ -16,9 +25,10 @@ def get_filters(flag):
         if get_auth_status():
             st.button('Logout', on_click=logout)
 
+        companies = get_folder_names('./data')
+
         directory = st.selectbox(
-            'Choose which data to analyse',
-            ['Ici store', 'Glanum', 'Olist'], disabled=flag)
+            'Choose which data to analyse', companies, disabled=flag)
 
         sales_filter = st.radio(
             'Analyze your sales based on',
