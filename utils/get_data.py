@@ -1,21 +1,5 @@
-# import os
 import datetime
 import pandas as pd
-# import sqlalchemy as db
-
-# DB_USERNAME = os.getenv("DB_USERNAME")
-# DB_PASSWORD = os.getenv("DB_PASSWORD")
-# DB_HOST = os.getenv("DB_HOST")
-# DB_NAME = os.getenv("DB_NAME")
-#
-# connection_string = f"mssql+pyodbc://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/
-# {DB_NAME}?driver=ODBC+Driver+17+for+SQL+Server"
-#
-# engine = db.create_engine(connection_string)
-#
-#
-# def get_data_from_db(query):
-#     return pd.read_sql_query(query, engine)
 
 
 def get_data_from_csv(directory):
