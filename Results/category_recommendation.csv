@@ -1,0 +1,7 @@
+antecedents_,consequents_
+Moteurs,Télécommandes
+Télécommandes,Moteurs
+Télécommandes,Stores bannes sur mesure
+Habitat,Protection solaire extérieure
+Rentoilage de store,Protection solaire extérieure
+Protection solaire extérieure,Rentoilage de store

@@ -10,6 +10,7 @@ from utils.get_data import filter_data, get_dates
 from customer_overview_functions import customer_overview_main_function
 from next_product_prediction import next_prod_pred_main_function
 from utils.authentification import get_auth_status, render_login_form, get_user_type, logout
+from map_function import map_function
 
 
 def get_filters(flag):
@@ -67,6 +68,7 @@ def data_main():
 
         with geo_tab:
             st.write('Map')
+            map_function(address, customers)
 
         with rfm_seg_tab:
             rfm, scaler, kmeans, ml_clusters, segment_1_cluters, segment_2_cluters = rfm_main_function(
