@@ -82,7 +82,7 @@ def cluster_overview_function(address, overview_data):
 
 def overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
                            product_grouped_df, category_grouped_df, product_recommendation, category_recommendation,
-                           directory, snapshot_start_date, snapshot_end_date):
+                           directory, snapshot_start_date, snapshot_end_date, admin, sales_filter, customer_type):
     customer_overview_tab, cluster_overview_tab, data_tab = st.tabs(['Customer overview', 'Cluster overview', 'Download data'])
 
     def show_details():
@@ -101,16 +101,17 @@ def overview_main_function(address, overview_data, ml_clusters, segment_1_cluste
         cluster_overview_function(address, overview_data)
         show_details()
     with data_tab:
-        if st.button('Send Data to team Marketing', type='primary'):
-            overview_data.to_csv('./overview_data.csv', index=False)
-            ml_clusters.to_csv('./ml_clusters.csv', index=False)
-            segment_1_clusters.to_csv('./segment_1_clusters.csv', index=False)
-            segment_2_clusters.to_csv('./segment_2_clusters.csv', index=False)
-            product_grouped_df.to_csv('./product_grouped_df.csv', index=False)
-            category_grouped_df.to_csv('./category_grouped_df.csv', index=False)
-            product_recommendation.to_csv('./product_recommendation.csv', index=False)
-            category_recommendation.to_csv('./category_recommendation.csv', index=False)
-            st.success('All the Data has been successfully sent !', icon="✅")
+        if admin:
+            if st.button('Send Data to team Marketing', type='primary'):
+                overview_data.to_csv('./Results/overview_data_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                ml_clusters.to_csv('./Results/ml_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                segment_1_clusters.to_csv('./Results/segment_1_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                segment_2_clusters.to_csv('./Results/segment_2_clusters_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                product_grouped_df.to_csv('./Results/product_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                category_grouped_df.to_csv('./Results/category_grouped_df_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                product_recommendation.to_csv('./Results/product_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                category_recommendation.to_csv('./Results/category_recommendation_' + directory + '_' + sales_filter + '_' + customer_type + '_' + str(snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv', index=False)
+                st.success('All the Data has been successfully sent !', icon="✅")
 
         with st.expander('Customers data'):
             st.dataframe(overview_data)
