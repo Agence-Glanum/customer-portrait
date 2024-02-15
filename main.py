@@ -8,7 +8,7 @@ from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
 from overview_functions import overview_main_function
 from utils.authentification import get_auth_status, render_login_form, get_user_type, logout
-from utils.utility_functions import compute_lifetime_value
+from utils.utility_functions import compute_lifetime_value, get_customers_heatmap
 import os
 
 
@@ -76,7 +76,9 @@ def data_main():
             home_main_function(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
 
         with geo_tab:
-            st.write('Map')
+            st.subheader(
+                f'Heatmap for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]')
+            get_customers_heatmap(address)
 
         with rfm_seg_tab:
             rfm, ml_clusters, segment_1_clusters, segment_2_clusters = rfm_main_function(
