@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from utils.data_viz import show_timelines
-from utils.utility_functions import get_customer_location, get_cluster_location
+from utils.utility_functions import get_customer_location
 
 
 def customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date):
@@ -53,6 +53,9 @@ def cluster_overview_function(address, overview_data):
     st.dataframe(
         overview_data[['Cluster RFM', 'Segment 1', 'Segment 2', 'Product cluster MBA', 'Category cluster MBA', 'CLTV']])
 
+    st.subheader('Cluster Location')
+    st.error('A revoir')
+
     st.subheader("Quick recap", divider='grey')
     col1, col2 = st.columns(2)
     col1.write(f"- **Customers**: {len(overview_data)}")
@@ -73,10 +76,6 @@ def cluster_overview_function(address, overview_data):
         fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
         fig.update_layout(title=f'Distribution of Clusters for {column}')
         st.plotly_chart(fig)
-
-    st.subheader('Cluster Location')
-    st.error('A revoir')
-    get_cluster_location(address, cluster_id)
 
     return
 
