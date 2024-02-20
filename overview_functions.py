@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from utils.data_viz import show_timelines
-from utils.utility_functions import get_customer_location, get_cluster_location
+from utils.utility_functions import get_customer_location
 
 
 def customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date):
@@ -76,7 +76,6 @@ def cluster_overview_function(address, overview_data):
 
     st.subheader('Cluster Location')
     st.error('A revoir')
-    get_cluster_location(address, cluster_id)
 
     return
 
