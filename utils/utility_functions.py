@@ -3,6 +3,10 @@ import pandas as pd
 import streamlit as st
 import geopandas as gpd
 import plotly.express as px
+import numpy as np
+import folium
+from folium.plugins import HeatMap
+from streamlit_folium import folium_static
 
 
 def compute_kpis(invoices, orders, categories, products, cltv_df):
@@ -58,7 +62,19 @@ def get_customers_heatmap(address):
         data = json.load(f)
 
     corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
-    zip_codes = address.drop_duplicates()
+
+
+    address['Address_1'] = address['Address_1'].astype(str).str.strip()
+    address['City'] = address['City'].str.strip()
+    address['Zip_code'] = address['Zip_code'].str.strip()
+    address['Country'] = address['Country'].str.strip()
+
+    zip_codes = address.drop_duplicates(subset=['Address_1', 'Zip_code', 'City', 'Country'])
+    zip_codes = zip_codes.drop_duplicates(subset=['Customer_ID'])
+    # zip_codes = address.drop_duplicates()
+
+    non_numeric_pattern = r'^[^\d]*$'
+    zip_codes = zip_codes[~zip_codes['Zip_code'].str.contains(non_numeric_pattern, na=False)]
 
     mask = (zip_codes['Country'] != 'FR') & (~zip_codes['Country'].isnull())
     zip_codes.loc[mask, 'Zip_code'] = zip_codes.loc[mask, 'Country']
@@ -101,20 +117,36 @@ def get_customers_heatmap(address):
     merged_df_countries_dropped = merged_df_countries.drop(columns=["numeric", "alpha3"])
     merged_df_countries_dropped = merged_df_countries_dropped.rename(columns={"country": "nomShort"})
     result = pd.concat([merged_df_countries_dropped, merged_df_dpts_dropped], ignore_index=True)
+    result['Count'] = pd.to_numeric(result['Count'], errors='coerce')
+    result['Count_log'] = np.log1p(result['Count'])
+    color_scale_range = [result['Count'].min(), result['Count'].max()]
+    # fig = px.density_mapbox(result,
+    #                         height=600,
+    #                         lat='lat',
+    #                         lon='lng',
+    #                         z='Count',
+    #                         # range_color=color_scale_range,
+    #                         color_continuous_scale="plasma",
+    #                         radius=10,
+    #                         center={"lat": 46.6031, "lon": 1.7394},
+    #                         zoom=2,
+    #                         mapbox_style="carto-positron"
+    #                         )
+    #
+    # fig.update_layout(
+    #     coloraxis_showscale=True,  # Set to True to display the color scale
+    #     coloraxis_colorbar=dict(title='Count'),  # Customize the colorbar title
+    # )
+    # st.write(fig)
+    # Create a Folium map centered around the mean of the coordinates
+    map_center = [result['lat'].mean(), result['lng'].mean()]
+    mymap = folium.Map(location=map_center, zoom_start=5)
 
-    fig = px.density_mapbox(result,
-                            height=600,
-                            lat='lat',
-                            lon='lng',
-                            z='Count',
-                            color_continuous_scale="viridis",
-                            range_color=[0, 12],
-                            radius=10,
-                            center={"lat": 46.6031, "lon": 1.7394}, zoom=2,
-                            mapbox_style="carto-positron")
-    fig.update_layout(coloraxis_showscale=False)
-    st.write(fig)
+    # Create a HeatMap layer from the DataFrame
+    heat_data = [[row['lat'], row['lng'], row['Count']] for index, row in result.iterrows()]
+    HeatMap(heat_data).add_to(mymap)
 
+    folium_static(mymap)
     return
 
 
