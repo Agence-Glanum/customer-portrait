@@ -27,12 +27,8 @@ def customer_overview_function(address, overview_data, directory, snapshot_start
                 str(round((overview_data['CLTV'].values[0] - mean_cltv) / mean_cltv * 100, 2)) + ' %')
 
     st.subheader('Timeline of Sales and Orders')
-    path = './data/' + directory
-    invoices = pd.read_csv(f'{path}/Invoices.csv')
-    orders = pd.read_csv(f'{path}/Orders.csv')
 
-    show_timelines(invoices[(invoices['Customer_ID'] == customer_id)],
-                   orders[(orders['Customer_ID'] == customer_id)], snapshot_start_date, snapshot_end_date)
+    show_timelines(directory, snapshot_start_date, snapshot_end_date, customer_id)
 
     st.subheader('Customer Location')
     get_customer_location(address, customer_id)

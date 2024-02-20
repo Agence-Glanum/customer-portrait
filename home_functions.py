@@ -13,7 +13,7 @@ def home_main_function(invoices, orders, customers, products, categories, cltv_d
         f'Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
         divider='grey')
     st.write('Timeline of Sales and Orders')
-    show_timelines(invoices, orders, snapshot_start_date, snapshot_end_date)
+    show_timelines(directory, snapshot_start_date, snapshot_end_date)
     st.write('Boxplot for both Sales and Orders')
     show_boxplot(invoices, orders)
 
