@@ -5,19 +5,22 @@ import geopandas as gpd
 import plotly.express as px
 
 
-def compute_kpis(invoices, orders, categories, products, cltv_df):
+def compute_kpis(invoices, orders, customers, categories, products, cltv_df):
+    invoices = invoices[(invoices['Paid'] == 1) & (invoices['Customer_ID'] is not None)]
+    orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
+                    & (orders['Customer_ID'] is not None)]
+
     col1, col2, col3 = st.columns(3)
 
-    col1.metric('Customers', invoices['Customer_ID'].nunique())
+    col1.metric('Customers', customers['Customer_ID'].nunique())
     col1.metric('Categories Count', str(len(categories)))
     col1.metric('Products Count', str(len(products)))
     col1.metric('Lifetime value', str(round(cltv_df['CLTV'].mean(), 2)))
 
-    valid_orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')]
-    col2.metric('Orders', valid_orders['Order_ID'].nunique())
-    col2.metric('Minimum orders Value', str(round(valid_orders['Total_price'].min(), 2)) + '€')
-    col2.metric('Average Order Value', str(round(valid_orders['Total_price'].mean(), 2)) + '€')
-    col2.metric('Maximum orders Value', str(round(valid_orders['Total_price'].max(), 2)) + '€')
+    col2.metric('Orders', orders['Order_ID'].nunique())
+    col2.metric('Minimum orders Value', str(round(orders['Total_price'].min(), 2)) + '€')
+    col2.metric('Average Order Value', str(round(orders['Total_price'].mean(), 2)) + '€')
+    col2.metric('Maximum orders Value', str(round(orders['Total_price'].max(), 2)) + '€')
 
     col3.metric('Invoices', invoices['Invoice_ID'].nunique())
     col3.metric('Minimum Invoice Value', str(round(invoices['Total_price'].min(), 2)) + '€')
@@ -119,17 +122,16 @@ def get_customers_heatmap(address):
 
 
 def get_customer_location(address, customer_id):
-    df_adresses = address
     corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
 
     selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
     selected_entries["nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
     selected_entries["code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
 
-    df_adresses['Zip_code'] = df_adresses['Zip_code'].astype(str)
+    address['Zip_code'] = address['Zip_code'].astype(str)
     selected_entries['code_postal'] = selected_entries['code_postal'].astype(str)
 
-    df_adresses['Zip_code'] = df_adresses.apply(
+    address['Zip_code'] = address.apply(
         lambda row: selected_entries.loc[
             (selected_entries['code_postal'] == row['Zip_code']), 'code_commune_insee'].values[0]
         if any(selected_entries['code_postal'] == row['Zip_code'])
@@ -137,7 +139,7 @@ def get_customer_location(address, customer_id):
         axis=1
     )
 
-    customer_zip = df_adresses[df_adresses['Customer_ID'] == customer_id]
+    customer_zip = address[address['Customer_ID'] == customer_id]
     customer_zip.loc[:, 'Zip_code'] = customer_zip['Zip_code'].str[:2]
     customer_zip["City"] = customer_zip["City"].str.replace(" ", "-").str.capitalize()
 
@@ -174,9 +176,4 @@ def get_customer_location(address, customer_id):
         world_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
         st.write(world_map)
 
-    return
-
-
-def get_cluster_location(address, cluster_id):
-    st.write('Map')
     return

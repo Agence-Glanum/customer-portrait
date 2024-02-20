@@ -1,18 +1,13 @@
 import streamlit as st
-import pandas as pd
 from utils.data_viz import show_timelines, show_boxplot
 from utils.utility_functions import compute_kpis
 
 
-def home_main_function(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory):
-    path = './data/Glanum/' if directory == 'Glanum' else './data/IciStore/'
-    invoices = pd.read_csv(f'{path}/Invoices.csv')
-    orders = pd.read_csv(f'{path}/Orders.csv')
-
+def home_main_function(invoices, orders, customers, products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory):
     st.subheader(
         f'KPIs for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',
         divider='grey')
-    compute_kpis(invoices, orders, categories, products, cltv_df)
+    compute_kpis(invoices, orders, customers, categories, products, cltv_df)
 
     st.subheader(
         f'Revenue details for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]',

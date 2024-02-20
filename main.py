@@ -73,7 +73,7 @@ def data_main():
     if not df_sales.empty and not df_lines.empty:
         with home_tab:
             cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
-            home_main_function(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
+            home_main_function(invoices, orders, customers, products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
 
         with geo_tab:
             st.subheader(

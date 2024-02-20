@@ -385,7 +385,7 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
     rfm = compute_rfm_segments(df, snapshot_end_date, transformed_sales_filter)
 
     col1, col2, col3, col4 = st.tabs(
-        ["RFM Distribution", "Customer Clusters using ML", "Customer Segments using RFM scores", "Data"])
+        ["RFM Distribution", "Customer Clusters using ML", "Customer Segments using RFM scores", "Download data"])
 
     with col1:
         show_rfm_distribution(rfm, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
