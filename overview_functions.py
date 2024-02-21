@@ -1,8 +1,7 @@
-import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from utils.data_viz import show_timelines
-from utils.utility_functions import get_customer_location
+from utils.utility_functions import get_customer_location, get_cluster_location
 
 
 def customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date):
@@ -23,7 +22,8 @@ def customer_overview_function(address, overview_data, directory, snapshot_start
     col2.metric('Product cluster', 'Cluster ' + str(overview_data['Product cluster MBA'].values[0]))
     col2.metric('Category cluster', 'Cluster ' + str(overview_data['Category cluster MBA'].values[0]))
 
-    col3.metric('Lifetime value', str(round(overview_data['CLTV'].values[0], 2)),
+    col3.write('***Lifetime value***')
+    col3.metric('Customer LTV', str(round(overview_data['CLTV'].values[0], 2)),
                 str(round((overview_data['CLTV'].values[0] - mean_cltv) / mean_cltv * 100, 2)) + ' %')
 
     st.subheader('Timeline of Sales and Orders')
@@ -46,11 +46,12 @@ def cluster_overview_function(address, overview_data):
     cluster_id = col2.selectbox('Cluster', cluster_ids)
 
     overview_data = overview_data[overview_data[cluster_type] == cluster_id]
-    st.dataframe(
-        overview_data[['Cluster RFM', 'Segment 1', 'Segment 2', 'Product cluster MBA', 'Category cluster MBA', 'CLTV']])
+    # st.dataframe(
+    #     overview_data[['Cluster RFM', 'Segment 1', 'Segment 2', 'Product cluster MBA', 'Category cluster MBA', 'CLTV']])
 
     st.subheader('Cluster Location')
-    st.error('A revoir')
+    customer_ids = overview_data[overview_data[cluster_type] == cluster_id]['Customer_ID']
+    get_cluster_location(address, customer_ids)
 
     st.subheader("Quick recap", divider='grey')
     col1, col2 = st.columns(2)
