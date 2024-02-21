@@ -1,15 +1,14 @@
-import pandas as pd
 import streamlit as st
 
 
-def recommend_product(df, product):  # num_of_products
+def recommend_product(df, product):
     df.sort_values('lift', ascending=False, inplace=True)
     recommendation_list = []
     for index, row in df.iterrows():
         if product in row["antecedents_"]:
             recommendation_list.append(row["consequents_"])
     try:
-        return recommendation_list[0]  # recommendation_list[0:num_of_products]
+        return recommendation_list[0]
     except IndexError:
         return 'No recommendation available'
 
