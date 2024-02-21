@@ -26,11 +26,6 @@ def show_timelines(directory, snapshot_start_date, snapshot_end_date, customer_i
         invoices = invoices[(invoices['Customer_ID'] == customer_id)]
         orders = orders[(orders['Customer_ID'] == customer_id)]
 
-    invoices = invoices[(invoices['Paid'] == 1) & (invoices['Customer_ID'] is not None)]
-
-    orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
-                    & (orders['Customer_ID'] is not None)]
-
     invoices['Invoice_date'] = pd.to_datetime(invoices['Invoice_date']).dt.normalize()
     orders['Order_date'] = pd.to_datetime(orders['Order_date']).dt.normalize()
 
