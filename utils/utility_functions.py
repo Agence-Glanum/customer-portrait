@@ -150,7 +150,7 @@ def get_customer_location(address, customer_id):
 
         france_map = px.choropleth_mapbox(customer_zip, geojson=gdf_departements, locations='Zip_code',
                                           featureidkey='properties.code',
-                                          color='Zip_code',
+                                          color='Address_type',
                                           color_continuous_scale='Viridis',
                                           range_color=(0, 12),
                                           mapbox_style='carto-positron',
@@ -166,7 +166,8 @@ def get_customer_location(address, customer_id):
         gdf_occurences2 = gdf_departements2.merge(customer_zip['Country'], how='left', left_on='code',
                                                   right_on='Country')
         gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
-        world_map = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country', color='Country',
+        world_map = px.choropleth_mapbox(customer_zip, geojson=gdf_occurences2, locations='Country',
+                                         color='Address_type',
                                          featureidkey='properties.code',
                                          color_continuous_scale='Viridis',
                                          range_color=(0, 12),
@@ -178,3 +179,64 @@ def get_customer_location(address, customer_id):
         st.write(world_map)
 
     return
+
+
+def get_cluster_location(address, customer_ids):
+    corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
+
+    selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
+    selected_entries["nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
+    selected_entries["code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+
+    address['Zip_code'] = address['Zip_code'].astype(str)
+    selected_entries['code_postal'] = selected_entries['code_postal'].astype(str)
+
+    address['Zip_code'] = address.apply(
+        lambda row: selected_entries.loc[
+            (selected_entries['code_postal'] == row['Zip_code']), 'code_commune_insee'].values[0]
+        if any(selected_entries['code_postal'] == row['Zip_code'])
+        else row['Zip_code'],
+        axis=1
+    )
+
+    customer_zips = address[address['Customer_ID'].isin(customer_ids)]
+    customer_zips.loc[:, 'Zip_code'] = customer_zips['Zip_code'].str[:2]
+    customer_zips["City"] = customer_zips["City"].str.replace(" ", "-").str.capitalize()
+
+    geojson_france = './utils/Geo/contour-des-departements.geojson'
+    gdf_departements = gpd.read_file(geojson_france)
+
+    france_map = px.choropleth_mapbox(customer_zips[customer_zips["Country"] == "FR"],
+                                      geojson=gdf_departements, locations='Zip_code',
+                                      featureidkey='properties.code',
+                                      color='Address_type',
+                                      color_continuous_scale='Viridis',
+                                      range_color=(0, 12),
+                                      mapbox_style='carto-positron',
+                                      zoom=3.5, center={'lat': 46.6031, 'lon': 1.8883},
+                                      opacity=0.8,
+                                      )
+    france_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
+    st.subheader('In France')
+    st.write(france_map)
+
+    geojson_world = './utils/Geo/curiexplore-pays.geojson'
+    gdf_departements2 = gpd.read_file(geojson_world)
+    gdf_occurences2 = gdf_departements2.merge(customer_zips['Country'], how='left', left_on='code',
+                                              right_on='Country')
+    gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
+    world_map = px.choropleth_mapbox(customer_zips[customer_zips["Country"] != "FR"], geojson=gdf_occurences2, locations='Country',
+                                     color='Address_type',
+                                     featureidkey='properties.code',
+                                     color_continuous_scale='Viridis',
+                                     range_color=(0, 12),
+                                     mapbox_style='carto-positron',
+                                     zoom=1, center={'lat': 46.6031, 'lon': 1.8883},
+                                     opacity=0.8,
+                                     )
+    world_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
+    if not customer_zips[customer_zips["Country"] != "FR"].empty:
+        st.subheader('Worldwide')
+        st.write(world_map)
+    return
+
