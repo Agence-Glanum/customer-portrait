@@ -24,13 +24,6 @@ def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0
     bar_data['itemsets'] = bar_data['itemsets'].apply(list).astype(str)
     st.write(px.bar(x=bar_data['itemsets'], y=bar_data['support'], labels={'x': 'Product', 'y': 'Support value'}))
 
-    # apriori_res['length'] = apriori_res['itemsets'].apply(lambda x: len(x))
-    # heatmap_data = apriori_res[apriori_res['length'] == 2].drop(['length'], axis=1)
-    # heatmap_data['Item 1'] = heatmap_data['itemsets'].apply(lambda x: list(x)[0])
-    # heatmap_data['Item 2'] = heatmap_data['itemsets'].apply(lambda x: list(x)[1])
-    # heatmap_data = heatmap_data.pivot(index='Item 1', columns='Item 2', values='support').fillna(0)
-    # st.write(px.imshow(heatmap_data))
-
     st.subheader('Association rules')
     rules = association_rules(apriori_res, metric=metric, min_threshold=min_threshold).sort_values(by='confidence',
                                                                                                    ascending=False)
