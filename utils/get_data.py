@@ -41,10 +41,15 @@ def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_dat
     end_date = datetime.datetime(snapshot_end_date.year, snapshot_end_date.month, snapshot_end_date.day)
 
     invoices = invoices[(invoices['Invoice_date'] >= start_date) & (invoices['Invoice_date'] <= end_date)]
+    invoices = invoices[(invoices['Paid'] == 1) & (invoices['Customer_ID'] is not None)]
     orders = orders[(orders['Order_date'] >= start_date) & (orders['Order_date'] <= end_date)]
+    orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
+                    & (orders['Customer_ID'] is not None)]
 
     invoices_lines = invoices_lines[invoices_lines['Invoice_ID'].isin(invoices['Invoice_ID'])]
+    invoices_lines = invoices_lines[invoices_lines['Quantity'] > 0]
     orders_lines = orders_lines[orders_lines['Order_ID'].isin(orders['Order_ID'])]
+    orders_lines = orders_lines[orders_lines['Quantity'] > 0]
 
     if sales_filter == 'Invoice':
         products = products[products['Product_ID'].isin(invoices_lines['Product_ID'])]

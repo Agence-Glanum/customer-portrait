@@ -111,12 +111,10 @@ def get_customers_heatmap(address):
                             lon='lng',
                             z='Count',
                             color_continuous_scale="viridis",
-                            # range_color=[0, 12],
                             radius=10,
                             center={"lat": 46.6031, "lon": 1.7394},
                             zoom=2,
                             mapbox_style="carto-positron")
-    # fig.update_layout(coloraxis_showscale=True)
     st.write(fig)
 
     return
