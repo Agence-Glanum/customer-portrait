@@ -16,15 +16,15 @@ from sklearn.metrics import make_scorer
 
 def clean_data(categories, products, df_sales, df_lines, data_filter, transformed_sales_filter):
     df_sales.rename(columns={'Total_price': 'Final_price'}, inplace=True)
-    df = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID')
-    df = df[['Product_ID', 'Customer_ID', data_filter]]
-    df = df.groupby(['Customer_ID', 'Product_ID'])[data_filter].sum().reset_index()
-    df = df.pivot(index='Customer_ID', columns='Product_ID', values=data_filter).fillna(0.0)
+    df = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID').merge(products, on='Product_ID')
+    df = df[['Product_name', 'Customer_ID', data_filter]]
+    df = df.groupby(['Customer_ID', 'Product_name'])[data_filter].sum().reset_index()
+    df = df.pivot(index='Customer_ID', columns='Product_name', values=data_filter).fillna(0.0)
     df.columns = [str(col) for col in df.columns]
 
     df_cat = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID').merge(products, on='Product_ID').merge(
         categories, on='Category_ID')
-    df_cat = df_cat[['Product_ID', 'Category_name', 'Customer_ID', data_filter]]
+    df_cat = df_cat[['Product_name', 'Category_name', 'Customer_ID', data_filter]]
     df_cat = df_cat.groupby(['Customer_ID', 'Category_name'])[data_filter].sum().reset_index()
     df_cat = df_cat.pivot(index='Customer_ID', columns='Category_name', values=data_filter).fillna(0.0)
     df_cat.columns = [str(col) for col in df_cat.columns]
@@ -35,8 +35,8 @@ def clean_data(categories, products, df_sales, df_lines, data_filter, transforme
 def elbow_method(scaled_features):
     SSE = []
     for cluster in range(1, 12):
-        kmeans = KMeans(n_clusters=cluster, init='k-means++')
-        kmeans.fit(scaled_features)
+        kmeans = KMeans(n_clusters=cluster, init='k-means++', n_init='auto')
+        kmeans.fit(scaled_features.values)
         SSE.append(kmeans.inertia_)
 
     frame = pd.DataFrame({'Cluster': range(1, 12), 'SSE': SSE})
@@ -45,13 +45,13 @@ def elbow_method(scaled_features):
 
 
 def show_umap(product_features):
-    ump_2d = umap.UMAP(n_components=2, init='random', random_state=0)
+    ump_2d = umap.UMAP(n_components=2, init='random')
     umap_2d_data = ump_2d.fit_transform(product_features)
     fig = px.scatter(x=umap_2d_data[:, 0], y=umap_2d_data[:, 1],
                      title="2D UMAP Basket Clusters", color=product_features['Cluster MBA'].astype(str))
     st.write(fig)
 
-    ump_3d = umap.UMAP(n_components=3, init='random', random_state=0)
+    ump_3d = umap.UMAP(n_components=3, init='random')
     umap_3d_data = ump_3d.fit_transform(product_features)
     fig = px.scatter_3d(x=umap_3d_data[:, 0], y=umap_3d_data[:, 1], z=umap_3d_data[:, 2],
                         title="3D UMAP Basket Clusters", color=product_features['Cluster MBA'].astype(str))
@@ -75,8 +75,8 @@ def show_radar_plot(categorie_features):
 
 def kmeans_model(features, mode, nb_clusters):
     elbow_method(features)
-    model = KMeans(n_clusters=nb_clusters, init='k-means++')
-    model.fit(features)
+    model = KMeans(n_clusters=nb_clusters, init='k-means++', n_init='auto')
+    model.fit(features.values)
     st.write("Silhouette score : ", round(silhouette_score(features, model.labels_, metric='euclidean'), 2))
     pred = model.predict(features)
     features['Cluster MBA'] = pred
@@ -88,7 +88,7 @@ def kmeans_model(features, mode, nb_clusters):
 
 
 def hdbscan_model(features, mode):
-    hdb = hdbscan.HDBSCAN(gen_min_span_tree=True).fit(features)
+    hdb = hdbscan.HDBSCAN(gen_min_span_tree=True).fit(features.values)
     param_dist = {'min_cluster_size': [10, 25, 50, 75, 100, 150, 200]}
     validity_scorer = make_scorer(hdbscan.validity.validity_index, greater_is_better=True)
     n_iter_search = 20
@@ -96,7 +96,7 @@ def hdbscan_model(features, mode):
                                        n_iter=n_iter_search,
                                        scoring=validity_scorer,
                                        random_state=42)
-    random_search.fit(features)
+    random_search.fit(features.values)
     st.write('Hyperparameter Tuning (Best Parameters) : ')
     st.write(f"Min cluster size : {random_search.best_params_['min_cluster_size']}")
     st.write(f"DBCV score : {round(random_search.best_estimator_.relative_validity_, 2)}")
@@ -134,7 +134,7 @@ def prod_aff_main_function(df_sales, df_lines, categories, products, directory, 
                            transformed_sales_filter):
     st.header(f'Basket Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] '
               f'to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]')
-    data_filter = st.radio('Filter by', ['Quantity', 'Total_price'], horizontal=True)
+    data_filter = st.radio('Analyze the Data based on', ['Quantity', 'Total_price'], horizontal=True)
     product_features, category_features = clean_data(categories, products, df_sales, df_lines, data_filter,
                                                      transformed_sales_filter)
 
