@@ -121,5 +121,6 @@ def overview_main_function(address, overview_data, ml_clusters, segment_1_cluste
             st.dataframe(product_recommendation)
             st.subheader('For categories', divider='grey')
             st.dataframe(category_recommendation)
-        show_details()
+        show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df)
+
     return
