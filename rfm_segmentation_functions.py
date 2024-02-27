@@ -58,14 +58,11 @@ def compute_rfm_segments(df, snapshot_end_date, transformed_sales_filter):
     return rfm
 
 
-def show_rfm_distribution(rfm, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter):
-    st.subheader(
-        f'Recency, Frequency, Monetary Distribution for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
-        divider='grey')
-    fig = make_subplots(rows=3, cols=1, subplot_titles=("Recency", "Frequency", "Monetary"))
+def show_rfm_distribution(rfm):
+    fig = make_subplots(rows=3, cols=1, subplot_titles=('Recency', 'Frequency', 'Monetary'))
     for i, j in enumerate(['Recency', 'Frequency', 'Monetary']):
         fig.add_box(x=rfm[str(j)], row=i + 1, col=1, name=str(j))
-    fig.update_layout(bargap=0.2)
+    fig.update_layout(bargap=0.2, title='Boxplot for RFM Values')
     st.write(fig)
 
     return
@@ -76,7 +73,7 @@ def show_rfm_scatter_3d(rfm):
     fig.update_layout(scene=dict(
         xaxis_title='Recency',
         yaxis_title='Frequency',
-        zaxis_title='Monetary'))
+        zaxis_title='Monetary'), title='3D scatter of RFM Values')
     st.write(fig)
 
     return
@@ -111,13 +108,11 @@ def elbow_method(scaled_features):
     return
 
 
-def customer_segmentation_model(scaled_features, nb_clusters, directory, snapshot_start_date, snapshot_end_date,
-                                transformed_sales_filter):
+def customer_segmentation_model(scaled_features, nb_clusters):
     kmeans = KMeans(n_clusters=nb_clusters, init='k-means++', n_init='auto')
-    st.write(scaled_features)
     scaled_features = pd.DataFrame(scaled_features, columns=['Recency', 'Frequency', 'Monetary'])
     kmeans.fit(scaled_features.values)
-    st.write("Silhouette score : ", round(silhouette_score(scaled_features, kmeans.labels_, metric='euclidean'), 2))
+    st.success('Silhouette score : ' + str(round(silhouette_score(scaled_features, kmeans.labels_, metric='euclidean'), 2)))
 
     pred = kmeans.predict(scaled_features)
     scaled_features['Cluster RFM'] = ['Cluster ' + str(i) for i in pred]
@@ -127,9 +122,10 @@ def customer_segmentation_model(scaled_features, nb_clusters, directory, snapsho
     scaler = MinMaxScaler()
     avg_df[['Recency', 'Frequency', 'Monetary']] = scaler.fit_transform(avg_df[['Recency', 'Frequency', 'Monetary']])
 
-    st.subheader(
-        f'RFM Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
-        divider='grey')
+    return kmeans, avg_df, scaled_features
+
+
+def show_rfm_clusters(avg_df, scaled_features):
     fig = go.Figure()
     for i in range(len(avg_df['Cluster RFM'])):
         fig.add_trace(go.Scatterpolar(
@@ -138,19 +134,20 @@ def customer_segmentation_model(scaled_features, nb_clusters, directory, snapsho
             fill='toself',
             name='Cluster ' + str(i)
         ))
+    fig.update_layout(title='Customer RFM Insights Radar')
     st.write(fig)
 
     bar_data = scaled_features['Cluster RFM'].value_counts()
     fig = px.bar(x=bar_data.index, y=bar_data.values, color=bar_data.values, title='Number of Customer in each Cluster')
+    fig.update_layout(xaxis_title='Clusters', yaxis_title='Count')
     st.write(fig)
-
-    return kmeans, avg_df
+    return
 
 
 def show_customer_segment_distribution(rfm):
-    st.info(
-        'This RFM Segmentation is based on this PhD thesis (2021): https://dergipark.org.tr/tr/download/article-file/2343280',
-        icon="ℹ️")
+    st.info('This RFM Segmentation is based on this PhD thesis (2021): '
+            'https://dergipark.org.tr/tr/download/article-file/2343280',
+            icon='ℹ️')
 
     rfm['RFM score'] = rfm['R'].map(str) + rfm['F'].map(str) + rfm['M'].map(str)
     rfm['RFM_count'] = rfm.groupby(['R', 'F', 'M'])['R'].transform('count')
@@ -179,8 +176,6 @@ def show_customer_segment_distribution(rfm):
     rfm['Segment 1'] = rfm.apply(lambda x: label_rfm_segments(x['RFM score']), axis=1)
     rfm['size'] = np.ceil(rfm['RFM_count'] / 10) * 10
 
-    st.subheader('Customer clustering based on R, F and M')
-
     colors_palette = {
         'Risky': '#29b09d',
         'Hold and improve': '#ff2b2b',
@@ -196,23 +191,140 @@ def show_customer_segment_distribution(rfm):
     fig.update_layout(scene=dict(
         xaxis_title='Recency',
         yaxis_title='Frequency',
-        zaxis_title='Monetary'))
-
+        zaxis_title='Monetary'), title='3D scatter of RFM Segments')
     st.write(fig)
 
     segments_counts = rfm['Segment 1'].value_counts().sort_values(ascending=False)
     fig_pie = px.pie(segments_counts, values=segments_counts.values, names=segments_counts.index,
                      color=segments_counts.index, color_discrete_map=colors_palette)
+    fig_pie.update_layout(title='Proportion of RFM Segments')
     st.write(fig_pie)
 
     return
 
 
 def show_customer_segment_distribution_rfm(rfm):
+
+    # fig, axes = plt.subplots(nrows=5, ncols=5, sharex=False, sharey=True, figsize=(15, 15))
+    # r_range = range(1, 6)
+    # f_range = range(1, 6)
+    #
+    # for f in f_range:
+    #     for r in r_range:
+    #         y = rfm[(rfm['R'] == r) & (rfm['F'] == f)]['M'].value_counts().sort_index()
+    #         x = y.index
+    #         ax = axes[5 - f, r - 1]
+    #         bars = ax.bar(x, y, color='white')
+    #         ax.set_xticks(x)
+    #         if f == 1:
+    #             if r == 3:
+    #                 ax.set_xlabel('{}\nR'.format(r), va='top', color='black')
+    #             else:
+    #                 ax.set_xlabel('{}\n'.format(r), va='top', color='black')
+    #         if r == 1:
+    #             if f == 3:
+    #                 ax.set_ylabel('F\n{}'.format(f), color='black')
+    #             else:
+    #                 ax.set_ylabel(f, color='black')
+    #         ax.set_frame_on(False)
+    #         ax.tick_params(left=False, labelleft=False, bottom=False)
+    #         ax.tick_params(axis='x', colors='black')
+    #
+    #         for bar in bars:
+    #             value = bar.get_height()
+    #             if value == y.max():
+    #                 bar.set_color('firebrick')
+    #             ax.text(bar.get_x() + bar.get_width() / 2,
+    #                     value,
+    #                     int(value),
+    #                     ha='center',
+    #                     va='bottom',
+    #                     color='black')
+    #
+    # def legend_function(list_, color_):
+    #     for element in list_:
+    #         axes[element].set_frame_on(True)
+    #         axes[element].set_facecolor(color_)
+    #         axes[element].grid(visible=False)
+    #
+    # legend_function([(3, 0), (3, 1), (4, 0), (4, 1)], '#83c9ff')
+    # legend_function([(1, 0), (1, 1), (2, 0), (2, 1)], '#29b09d')
+    # legend_function([(0, 0), (0, 1)], '#ff8700')
+    # legend_function([(4, 2), (3, 2)], '#7defa1')
+    # legend_function([(2, 2)], '#757d79')
+    # legend_function([(0, 2), (0, 3), (1, 2), (1, 3)], '#0068c9')
+    # legend_function([(4, 3)], '#ff2b2b')
+    # legend_function([(2, 3), (3, 3), (2, 4), (3, 4)], '#904cd9')
+    # legend_function([(4, 4)], '#ffabab')
+    # legend_function([(0, 4), (1, 4)], '#ffd16a')
+    #
+    # legend_handles = [
+    #     plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=label)
+    #     for color, label in [('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
+    #                          ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'), ('#0068c9', 'Loyal customers'),
+    #                          ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
+    #                          ('#ffd16a', 'Champions')]]
+    #
+    # fig.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(1.1, 1.05))
+    # st.write(fig)
+
+    ###ici
+    fig = make_subplots(rows=5, cols=5, shared_yaxes=True)
+
+    rfm_data = np.random.randint(0, 10, size=(5, 5, 5))
+
+    colors = ['#83c9ff', '#29b09d', '#ff8700', '#7defa1', '#757d79', '#0068c9', '#ff2b2b', '#904cd9', '#ffabab',
+              '#ffd16a']
+
+    legend_handles = [
+        ('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
+        ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'), ('#0068c9', 'Loyal customers'),
+        ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
+        ('#ffd16a', 'Champions')
+    ]
+
+    for f in range(5):
+        for r in range(5):
+            y = rfm_data[r][f]
+            x = np.arange(len(y))
+
+            max_index = np.argmax(y)
+            colors[max_index] = 'firebrick'
+
+            fig.add_trace(
+                go.Bar(x=x, y=y, marker_color=colors.copy(), showlegend=False),
+                row=f + 1, col=r + 1
+            )
+
+            if f == 0:
+                if r == 2:
+                    fig.update_xaxes(title_text=f"R{r + 1}", row=f + 1, col=r + 1)
+                else:
+                    fig.update_xaxes(title_text=f"R{r + 1}", row=f + 1, col=r + 1)
+            if r == 0:
+                if f == 2:
+                    fig.update_yaxes(title_text=f"F{f + 1}", row=f + 1, col=r + 1)
+                else:
+                    fig.update_yaxes(title_text=f"F{f + 1}", row=f + 1, col=r + 1)
+
+    for color, label in legend_handles:
+        fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', marker=dict(color=color), name=label))
+
+    fig.update_layout(
+        title="RFM Analysis",
+        height=800,
+        width=800,
+        showlegend=True
+    )
+
+    st.write(fig)
+
+    ###fin
+
     colors = {
         'Hibernating': '#83c9ff',
         'At risk': '#29b09d',
-        "Can't loose": '#ff8700',
+        'Can\'t loose': '#ff8700',
         'About to sleep': '#7defa1',
         'Need attention': '#757d79',
         'Loyal customers': '#0068c9',
@@ -225,7 +337,7 @@ def show_customer_segment_distribution_rfm(rfm):
     segt_map = {
         r'[1-2][1-2]': 'Hibernating',
         r'[1-2][3-4]': 'At risk',
-        r'[1-2]5': "Can't loose",
+        r'[1-2]5': 'Can\'t loose',
         r'3[1-2]': 'About to sleep',
         r'33': 'Need attention',
         r'[3-4][4-5]': 'Loyal customers',
@@ -247,88 +359,21 @@ def show_customer_segment_distribution_rfm(rfm):
         color=segments_counts.index,
         color_discrete_map=colors
     )
-
-    st.subheader('Customer clustering based on R and F')
+    fig.update_layout(title='Proportion of RFM Segments')
     st.write(fig)
-
-    fig2, axes = plt.subplots(nrows=5, ncols=5, sharex=False, sharey=True, figsize=(15, 15))
-    r_range = range(1, 6)
-    f_range = range(1, 6)
-
-    for f in f_range:
-        for r in r_range:
-            y = rfm[(rfm['R'] == r) & (rfm['F'] == f)]['M'].value_counts().sort_index()
-            x = y.index
-            ax = axes[5 - f, r - 1]
-            bars = ax.bar(x, y, color='white')
-            ax.set_xticks(x)
-            if f == 1:
-                if r == 3:
-                    ax.set_xlabel('{}\nR'.format(r), va='top', color='black')
-                else:
-                    ax.set_xlabel('{}\n'.format(r), va='top', color='black')
-            if r == 1:
-                if f == 3:
-                    ax.set_ylabel('F\n{}'.format(f), color='black')
-                else:
-                    ax.set_ylabel(f, color='black')
-            ax.set_frame_on(False)
-            ax.tick_params(left=False, labelleft=False, bottom=False)
-            ax.tick_params(axis='x', colors='black')
-
-            for bar in bars:
-                value = bar.get_height()
-                if value == y.max():
-                    bar.set_color('firebrick')
-                ax.text(bar.get_x() + bar.get_width() / 2,
-                        value,
-                        int(value),
-                        ha='center',
-                        va='bottom',
-                        color='black')
-
-    st.subheader(f'Monetary value distribution for each R and F value')
-
-    def legend_function(list_, color_):
-        for element in list_:
-            axes[element].set_frame_on(True)
-            axes[element].set_facecolor(color_)
-            axes[element].grid(visible=False)
-
-    legend_function([(3, 0), (3, 1), (4, 0), (4, 1)], "#83c9ff")
-    legend_function([(1, 0), (1, 1), (2, 0), (2, 1)], "#29b09d")
-    legend_function([(0, 0), (0, 1)], "#ff8700")
-    legend_function([(4, 2), (3, 2)], "#7defa1")
-    legend_function([(2, 2)], "#757d79")
-    legend_function([(0, 2), (0, 3), (1, 2), (1, 3)], "#0068c9")
-    legend_function([(4, 3)], "#ff2b2b")
-    legend_function([(2, 3), (3, 3), (2, 4), (3, 4)], "#904cd9")
-    legend_function([(4, 4)], "#ffabab")
-    legend_function([(0, 4), (1, 4)], "#ffd16a")
-
-    legend_handles = [
-        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=label)
-        for color, label in [("#83c9ff", "Hibernating"), ("#29b09d", "At risk"), ("#ff8700", "Can't lose them"),
-                             ("#7defa1", "About to sleep"), ("#757d79", "Need attention"),
-                             ("#0068c9", "Loyal customers"),
-                             ("#ff2b2b", "Promising"), ("#904cd9", "Potential loyalists"), ("#ffabab", "New customers"),
-                             ("#ffd16a", "Champions")]]
-
-    fig2.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(1.1, 1.05))
-    st.write(fig2)
 
     return
 
 
 def segment_1_details(df):
-    data = [["Star",
-             "It is the customer group that makes purchases most frequently, most up-to-date and in the highest amounts. It is the customer group with the highest score in terms of purchase frequency and currency, and purchase amounts"],
-            ["Loyal", "It is a group of customers who buy frequently, recently, with high amounts."],
-            ["Potential loyal",
-             "This is the customer group with lower purchase relevance compared to the loyal customer segment."],
-            ["Hold and improve",
-             "This is the customer group with low frequency and up-to-dateness. The purchasing stability of this group is low."],
-            ["Risky", "It is the customer group with the lowest purchase frequency and up-to-dateness."]]
+    data = [['Star',
+             'It is the customer group that makes purchases most frequently, most up-to-date and in the highest amounts. It is the customer group with the highest score in terms of purchase frequency and currency, and purchase amounts'],
+            ['Loyal', 'It is a group of customers who buy frequently, recently, with high amounts.'],
+            ['Potential loyal',
+             'This is the customer group with lower purchase relevance compared to the loyal customer segment.'],
+            ['Hold and improve',
+             'This is the customer group with low frequency and up-to-dateness. The purchasing stability of this group is low.'],
+            ['Risky', 'It is the customer group with the lowest purchase frequency and up-to-dateness.']]
     data = pd.DataFrame(data, columns=['Segment 1', 'Description'])
     data = pd.merge(data, df, on='Segment 1').set_index('Segment 1')
     st.table(data)
@@ -336,39 +381,39 @@ def segment_1_details(df):
 
 
 def segment_2_details(df):
-    data = [["Champions",
-             "They are your best customers. These customers recently made a purchase, buy often and that too the most expensive / high-priced items from your store.",
-             "Give rewards, build credibility, promote new products"],
-            ["Loyal customers",
-             "This category of customers may not have purchased very recently but they surely buy often and that too expensive / high-priced products.",
-             "Take feedbacks and surveys, upsell your products, present bonuses"],
-            ["Potential loyalist",
-             "Potential loyalist customers, though don't buy on regular basis, they are recent buyers and spend a good amount on product purchases.",
-             "Offer loyalty program, run contests, make them feel special"],
-            ["New customers",
-             "As the name suggests, they are the most recent buyers, purchased the lowest priced items and that too once or twice.",
-             "Provide onboarding support, gift them discounts, build relationship"],
-            ["Promising customers",
-             "Those segment of customers are those that bought recently and purchased lowest priced items.",
-             "Provide a free trial, create brand awareness, offer store credit"],
-            ["Lost",
-             "As the name suggests, you have almost lost these customers. They never came back. Also, their earlier purchases were the low-end products that too once or twice.",
-             "Reconnect with them, do one last promotion, take feedback"],
-            ["Need attention",
-             "These customers may not have bought recently, but they spent a decent amount of money quite a few times.",
-             "Offer combo products, get on call, introduce them to your new offerings"],
-            ["About to sleep",
-             "This type of customers did shop for your products but not very recently. Also, they don't purchase often and don't spend much.",
-             "Share valuable resource, conduct a competitive analysis, update your products"],
-            ["At risk",
-             "These customers bought your products frequently, purchased high-priced products. But haven't made any purchase since a long time.",
-             "Offer store credit, provide a wishlist, upgrade offers"],
-            ["Can't lose them",
-             "These customers were frequent buyers and purchased the most expensive/high-priced products but over the time they never came back.",
-             "Tailor services, make a phone call, connect on social media"],
-            ["Hibernating",
-             "These customers purchased only low-end items, that too hardly once or twice and never came back.",
-             "Decide if you want them back, review your product, send personalized campaign"],
+    data = [['Champions',
+             'They are your best customers. These customers recently made a purchase, buy often and that too the most expensive / high-priced items from your store.',
+             'Give rewards, build credibility, promote new products'],
+            ['Loyal customers',
+             'This category of customers may not have purchased very recently but they surely buy often and that too expensive / high-priced products.',
+             'Take feedbacks and surveys, upsell your products, present bonuses'],
+            ['Potential loyalist',
+             'Potential loyalist customers, though don\'t buy on regular basis, they are recent buyers and spend a good amount on product purchases.',
+             'Offer loyalty program, run contests, make them feel special'],
+            ['New customers',
+             'As the name suggests, they are the most recent buyers, purchased the lowest priced items and that too once or twice.',
+             'Provide onboarding support, gift them discounts, build relationship'],
+            ['Promising customers',
+             'Those segment of customers are those that bought recently and purchased lowest priced items.',
+             'Provide a free trial, create brand awareness, offer store credit'],
+            ['Lost',
+             'As the name suggests, you have almost lost these customers. They never came back. Also, their earlier purchases were the low-end products that too once or twice.',
+             'Reconnect with them, do one last promotion, take feedback'],
+            ['Need attention',
+             'These customers may not have bought recently, but they spent a decent amount of money quite a few times.',
+             'Offer combo products, get on call, introduce them to your new offerings'],
+            ['About to sleep',
+             'This type of customers did shop for your products but not very recently. Also, they don\'t purchase often and don\'t spend much.',
+             'Share valuable resource, conduct a competitive analysis, update your products'],
+            ['At risk',
+             'These customers bought your products frequently, purchased high-priced products. But haven\'t made any purchase since a long time.',
+             'Offer store credit, provide a wishlist, upgrade offers'],
+            ['Can\'t lose them',
+             'These customers were frequent buyers and purchased the most expensive/high-priced products but over the time they never came back.',
+             'Tailor services, make a phone call, connect on social media'],
+            ['Hibernating',
+             'These customers purchased only low-end items, that too hardly once or twice and never came back.',
+             'Decide if you want them back, review your product, send personalized campaign'],
             ]
     data = pd.DataFrame(data, columns=['Segment 2', 'Description', 'Strategies'])
     data = pd.merge(data, df, on='Segment 2').set_index('Segment 2')
@@ -376,36 +421,48 @@ def segment_2_details(df):
     return
 
 
-def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_start_date, transformed_sales_filter):
-    rfm = compute_rfm_segments(df, snapshot_end_date, transformed_sales_filter)
+def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_start_date, sales_filter, customer_type):
+    rfm = compute_rfm_segments(df, snapshot_end_date, sales_filter)
 
     col1, col2, col3, col4 = st.tabs(
-        ["RFM Distribution", "Customer Clusters using ML", "Customer Segments using RFM scores", "Download data"])
+        ['RFM Distribution', 'Customer Clusters using ML', 'Customer Segments using RFM scores', 'Download data'])
 
     with col1:
-        show_rfm_distribution(rfm, directory, snapshot_start_date, snapshot_end_date, transformed_sales_filter)
+        st.subheader(f'Recency, Frequency, Monetary Distribution', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
+        show_rfm_distribution(rfm)
         show_rfm_scatter_3d(rfm)
     with col2:
         scaled_features, scaler = clean_data(rfm)
-        st.subheader(
-            f"Elbow method for optimal number of Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] "
-            f"to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
-            divider='grey')
+        st.subheader(f'Fine-tuning Models: Hyperparameter Optimization', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
         elbow_method(scaled_features)
         nb_clusters = st.slider('Number of Clusters', 2, 12, 4)
-        kmeans, average_clusters = customer_segmentation_model(scaled_features, nb_clusters, directory,
-                                                               snapshot_start_date, snapshot_end_date,
-                                                               transformed_sales_filter)
+        kmeans, average_clusters, scaled_features = customer_segmentation_model(scaled_features, nb_clusters)
+        st.subheader(f'Results: RFM Clusters', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
+        show_rfm_clusters(average_clusters, scaled_features)
     with col3:
-        st.subheader(
-            f'Customer Segment Distribution - First approach for company :blue[{directory}], '
-            f'from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
-            divider='grey')
+        st.subheader(f'Customer Segment Distribution - First approach', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
         show_customer_segment_distribution(rfm)
-        st.subheader(
-            f'Customer Segment Distribution - Second approach for company :blue[{directory}], '
-            f'from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
-            divider='grey')
+        st.subheader(f'Customer Segment Distribution - Second approach', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
         show_customer_segment_distribution_rfm(rfm)
     with col4:
         col_names = ['Recency', 'Frequency', 'Monetary']
@@ -419,9 +476,10 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
         rfm = rfm.merge(customers[['Customer_ID', 'Customer_name']], on='Customer_ID')
         rfm['Customer_ID'] = rfm['Customer_ID'].astype(int)
         st.subheader(
-            f"Details for all customers for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
+            f'Details for all customers for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{sales_filter}]',
             divider='grey')
-        rfm = rfm[['Customer_ID', 'Customer_name', 'Recency', 'Frequency', 'Monetary', 'R', 'F', 'M', 'Cluster RFM', 'Segment 1', 'Segment 2']]
+        rfm = rfm[['Customer_ID', 'Customer_name', 'Recency', 'Frequency', 'Monetary', 'R', 'F', 'M', 'Cluster RFM',
+                   'Segment 1', 'Segment 2']]
         st.dataframe(rfm, use_container_width=True)
 
         with st.expander('Details about the clusters'):

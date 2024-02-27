@@ -87,7 +87,7 @@ def data_main():
         with rfm_seg_tab:
             rfm, ml_clusters, segment_1_clusters, segment_2_clusters = rfm_main_function(
                 df_sales, snapshot_end_date, customers, directory,
-                snapshot_start_date, sales_filter)
+                snapshot_start_date, sales_filter, customer_type)
 
         with mba_tab:
             product_clusters, category_clusters, product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = mba_main_function(
@@ -132,7 +132,8 @@ def marketing_main():
     if not df_sales.empty and not df_lines.empty:
         with statistics_tab:
             cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
-            home_main_function(products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
+            home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type,
+                               snapshot_start_date, snapshot_end_date, directory)
             mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
                                          snapshot_end_date, directory, sales_filter)
 

@@ -24,6 +24,7 @@ def show_plots(invoices, orders):
     data = orders['Status'].value_counts()
     fig = px.bar(data, y=data.values, x=data.index,
                  title='Proportion of Orders status')
+    fig.update_layout(yaxis_title='Count')
     st.write(fig)
 
     invoices['Paid'] = invoices['Paid'].replace({0: 'Unpaid', 1: 'Paid'})
