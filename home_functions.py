@@ -4,12 +4,12 @@ from utils.utility_functions import compute_kpis, get_customers_heatmap
 
 
 def show_geodemographic_profiling(address):
-    address_type = st.radio('Address type', ['Both', 'Invoice', 'Delivery'], horizontal=True)
+    address_type = st.radio('Address type', ['Invoice', 'Delivery'], horizontal=True)
 
     if address_type == 'Invoice':
-        address = address[address['Address_type'] == 'invoice']
+        address = address[(address['Address_type'] == 'invoice') | (address['Address_type'] == 'both')]
     elif address_type == 'Delivery':
-        address = address[address['Address_type'] == 'delivery']
+        address = address[(address['Address_type'] == 'delivery') | (address['Address_type'] == 'both')]
     try:
         get_customers_heatmap(address)
     except AttributeError:
