@@ -16,8 +16,7 @@ def get_data_from_csv(directory):
 
 
 def transform_data(directory):
-    (address, categories, customer, invoices, invoices_lines, orders,
-     orders_lines, products) = get_data_from_csv(directory)
+    address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = get_data_from_csv(directory)
 
     invoices['Invoice_date'] = pd.to_datetime(invoices['Invoice_date'])
     orders['Order_date'] = pd.to_datetime(orders['Order_date'])
@@ -37,34 +36,30 @@ def get_dates(directory):
 def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_date, directory):
     addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
 
+    # Get Customers based on the filter
+    customers = customers[(customers['Customer_type'] == client_type)]
+
+    # Get Invoices and Orders within the Date Range
     start_date = datetime.datetime(snapshot_start_date.year, snapshot_start_date.month, snapshot_start_date.day)
     end_date = datetime.datetime(snapshot_end_date.year, snapshot_end_date.month, snapshot_end_date.day)
+    invoices = invoices[(invoices['Invoice_date'] >= start_date) &
+                        (invoices['Invoice_date'] <= end_date) &
+                        (invoices['Customer_ID'].isin(customers['Customer_ID']))]
+    orders = orders[(orders['Order_date'] >= start_date) &
+                    (orders['Order_date'] <= end_date) &
+                    (orders['Customer_ID'].isin(customers['Customer_ID']))]
 
-    invoices = invoices[(invoices['Invoice_date'] >= start_date) & (invoices['Invoice_date'] <= end_date)]
-    invoices = invoices[(invoices['Paid'] == 1) & (invoices['Customer_ID'] is not None)]
-    orders = orders[(orders['Order_date'] >= start_date) & (orders['Order_date'] <= end_date)]
-    orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
-                    & (orders['Customer_ID'] is not None)]
+    # Get All Data based on filters
+    if sales_filter == 'Invoice':
+        customers = customers[customers['Customer_ID'].isin(invoices['Customer_ID'])]
+        products = products[products['Product_ID'].isin(invoices_lines['Product_ID'])]
+    else:
+        customers = customers[customers['Customer_ID'].isin(orders['Customer_ID'])]
+        products = products[products['Product_ID'].isin(orders_lines['Product_ID'])]
 
     invoices_lines = invoices_lines[invoices_lines['Invoice_ID'].isin(invoices['Invoice_ID'])]
-    invoices_lines = invoices_lines[invoices_lines['Quantity'] > 0]
     orders_lines = orders_lines[orders_lines['Order_ID'].isin(orders['Order_ID'])]
-    orders_lines = orders_lines[orders_lines['Quantity'] > 0]
-
-    if sales_filter == 'Invoice':
-        products = products[products['Product_ID'].isin(invoices_lines['Product_ID'])]
-        categories = categories[categories['Category_ID'].isin(products['Category_ID'])]
-
-        customers = customers[(customers['Customer_type'] == client_type)
-                              & (customers['Customer_ID'].isin(invoices['Customer_ID']))]
-        addresses = addresses[addresses['Customer_ID'].isin(customers['Customer_ID'])]
-
-    else:
-        products = products[products['Product_ID'].isin(orders_lines['Product_ID'])]
-        categories = categories[categories['Category_ID'].isin(products['Category_ID'])]
-
-        customers = customers[(customers['Customer_type'] == client_type)
-                              & (customers['Customer_ID'].isin(orders['Customer_ID']))]
-        addresses = addresses[addresses['Customer_ID'].isin(customers['Customer_ID'])]
+    categories = categories[categories['Category_ID'].isin(products['Category_ID'])]
+    addresses = addresses[addresses['Customer_ID'].isin(customers['Customer_ID'])]
 
     return addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products
