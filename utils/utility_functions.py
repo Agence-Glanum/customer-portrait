@@ -4,28 +4,18 @@ import streamlit as st
 import geopandas as gpd
 import plotly.express as px
 
+from utils.data_viz import show_plots
+
 
 def compute_kpis(invoices, orders, customers, categories, products, cltv_df):
-    invoices = invoices[(invoices['Paid'] == 1) & (invoices['Customer_ID'] is not None)]
-    orders = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
-                    & (orders['Customer_ID'] is not None)]
-
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     col1.metric('Customers', customers['Customer_ID'].nunique())
-    col1.metric('Categories Count', str(len(categories)))
-    col1.metric('Products Count', str(len(products)))
-    col1.metric('Lifetime value', str(round(cltv_df['CLTV'].mean(), 2)))
+    col2.metric('Categories Count', str(len(categories)))
+    col3.metric('Products Count', str(len(products)))
+    col4.metric('Lifetime Value', str(round(cltv_df['CLTV'].mean(), 2)) + '€')
 
-    col2.metric('Orders', orders['Order_ID'].nunique())
-    col2.metric('Minimum orders Value', str(round(orders['Total_price'].min(), 2)) + '€')
-    col2.metric('Average Order Value', str(round(orders['Total_price'].mean(), 2)) + '€')
-    col2.metric('Maximum orders Value', str(round(orders['Total_price'].max(), 2)) + '€')
-
-    col3.metric('Invoices', invoices['Invoice_ID'].nunique())
-    col3.metric('Minimum Invoice Value', str(round(invoices['Total_price'].min(), 2)) + '€')
-    col3.metric('Average Invoice Value', str(round(invoices['Total_price'].mean(), 2)) + '€')
-    col3.metric('Maximum Invoice Value', str(round(invoices['Total_price'].max(), 2)) + '€')
+    show_plots(invoices, orders)
 
     return
 
@@ -68,10 +58,10 @@ def get_customers_heatmap(address):
     zip_codes = zip_codes.dropna(subset=['Zip_code', 'City', 'Country'])
 
     selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
-    selected_entries["nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
-    selected_entries["code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+    selected_entries.loc[:, "nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
+    selected_entries.loc[:, "code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
     zip_codes['Zip_code'] = zip_codes['Zip_code'].astype(str)
-    selected_entries['code_postal'] = selected_entries['code_postal'].astype(str)
+    selected_entries.loc[:, 'code_postal'] = selected_entries['code_postal'].astype(str)
     zip_codes['Zip_code'] = zip_codes.apply(
         lambda row: selected_entries.loc[
             (selected_entries['code_postal'] == row['Zip_code']), 'code_commune_insee'].values[0]
@@ -124,11 +114,11 @@ def get_customer_location(address, customer_id):
     corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
 
     selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
-    selected_entries["nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
-    selected_entries["code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+    selected_entries.loc[:, "nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
+    selected_entries.loc[:, "code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
 
     address['Zip_code'] = address['Zip_code'].astype(str)
-    selected_entries['code_postal'] = selected_entries['code_postal'].astype(str)
+    selected_entries.loc[:, 'code_postal'] = selected_entries['code_postal'].astype(str)
 
     address['Zip_code'] = address.apply(
         lambda row: selected_entries.loc[
@@ -140,7 +130,7 @@ def get_customer_location(address, customer_id):
 
     customer_zip = address[address['Customer_ID'] == customer_id]
     customer_zip.loc[:, 'Zip_code'] = customer_zip['Zip_code'].str[:2]
-    customer_zip["City"] = customer_zip["City"].str.replace(" ", "-").str.capitalize()
+    customer_zip.loc[:, "City"] = customer_zip["City"].str.replace(" ", "-").str.capitalize()
 
     if (customer_zip["Country"] == "FR").any():
         geojson_france = './utils/Geo/contour-des-departements.geojson'
@@ -183,11 +173,11 @@ def get_cluster_location(address, customer_ids):
     corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
 
     selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
-    selected_entries["nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
-    selected_entries["code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+    selected_entries.loc[:, "nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
+    selected_entries.loc[:, "code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
 
     address['Zip_code'] = address['Zip_code'].astype(str)
-    selected_entries['code_postal'] = selected_entries['code_postal'].astype(str)
+    selected_entries.loc[:, 'code_postal'] = selected_entries['code_postal'].astype(str)
 
     address['Zip_code'] = address.apply(
         lambda row: selected_entries.loc[
@@ -199,7 +189,7 @@ def get_cluster_location(address, customer_ids):
 
     customer_zips = address[address['Customer_ID'].isin(customer_ids)]
     customer_zips.loc[:, 'Zip_code'] = customer_zips['Zip_code'].str[:2]
-    customer_zips["City"] = customer_zips["City"].str.replace(" ", "-").str.capitalize()
+    customer_zips.loc[:, "City"] = customer_zips["City"].str.replace(" ", "-").str.capitalize()
 
     geojson_france = './utils/Geo/contour-des-departements.geojson'
     gdf_departements = gpd.read_file(geojson_france)

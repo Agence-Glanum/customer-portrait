@@ -83,15 +83,11 @@ def show_rfm_scatter_3d(rfm):
 
 
 def clean_data(rfm):
-    print("Before cleaning the data, we have ", rfm.shape)
-
     new_df = rfm[['Recency', 'Frequency', 'Monetary']]
     z_scores = stats.zscore(new_df)
     abs_z_scores = np.abs(z_scores)
     filtered_entries = (abs_z_scores < 3).all(axis=1)
     new_df = new_df[filtered_entries]
-
-    print("After cleaning the data, we have ", new_df.shape)
 
     new_df = new_df.drop_duplicates()
     col_names = ['Recency', 'Frequency', 'Monetary']
@@ -106,8 +102,8 @@ def clean_data(rfm):
 def elbow_method(scaled_features):
     SSE = []
     for cluster in range(1, 12):
-        kmeans = KMeans(n_clusters=cluster, init='k-means++')
-        kmeans.fit(scaled_features)
+        kmeans = KMeans(n_clusters=cluster, init='k-means++', n_init='auto')
+        kmeans.fit(scaled_features.values)
         SSE.append(kmeans.inertia_)
 
     frame = pd.DataFrame({'Cluster': range(1, 12), 'SSE': SSE})
@@ -117,9 +113,10 @@ def elbow_method(scaled_features):
 
 def customer_segmentation_model(scaled_features, nb_clusters, directory, snapshot_start_date, snapshot_end_date,
                                 transformed_sales_filter):
-    kmeans = KMeans(n_clusters=nb_clusters, init='k-means++')
-    kmeans.fit(scaled_features)
-
+    kmeans = KMeans(n_clusters=nb_clusters, init='k-means++', n_init='auto')
+    st.write(scaled_features)
+    scaled_features = pd.DataFrame(scaled_features, columns=['Recency', 'Frequency', 'Monetary'])
+    kmeans.fit(scaled_features.values)
     st.write("Silhouette score : ", round(silhouette_score(scaled_features, kmeans.labels_, metric='euclidean'), 2))
 
     pred = kmeans.predict(scaled_features)
@@ -207,8 +204,6 @@ def show_customer_segment_distribution(rfm):
     fig_pie = px.pie(segments_counts, values=segments_counts.values, names=segments_counts.index,
                      color=segments_counts.index, color_discrete_map=colors_palette)
     st.write(fig_pie)
-
-
 
     return
 
@@ -335,7 +330,7 @@ def segment_1_details(df):
              "This is the customer group with low frequency and up-to-dateness. The purchasing stability of this group is low."],
             ["Risky", "It is the customer group with the lowest purchase frequency and up-to-dateness."]]
     data = pd.DataFrame(data, columns=['Segment 1', 'Description'])
-    data = pd.merge(data, df, on='Segment 1')
+    data = pd.merge(data, df, on='Segment 1').set_index('Segment 1')
     st.table(data)
     return
 
@@ -376,7 +371,7 @@ def segment_2_details(df):
              "Decide if you want them back, review your product, send personalized campaign"],
             ]
     data = pd.DataFrame(data, columns=['Segment 2', 'Description', 'Strategies'])
-    data = pd.merge(data, df, on='Segment 2')
+    data = pd.merge(data, df, on='Segment 2').set_index('Segment 2')
     st.table(data)
     return
 
@@ -393,7 +388,8 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
     with col2:
         scaled_features, scaler = clean_data(rfm)
         st.subheader(
-            f"Elbow method for optimal number of Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
+            f"Elbow method for optimal number of Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] "
+            f"to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
             divider='grey')
         elbow_method(scaled_features)
         nb_clusters = st.slider('Number of Clusters', 2, 12, 4)
@@ -402,11 +398,13 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
                                                                transformed_sales_filter)
     with col3:
         st.subheader(
-            f'Customer Segment Distribution - First approach for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
+            f'Customer Segment Distribution - First approach for company :blue[{directory}], '
+            f'from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
             divider='grey')
         show_customer_segment_distribution(rfm)
         st.subheader(
-            f'Customer Segment Distribution - Second approach for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
+            f'Customer Segment Distribution - Second approach for company :blue[{directory}], '
+            f'from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]',
             divider='grey')
         show_customer_segment_distribution_rfm(rfm)
     with col4:
@@ -420,30 +418,21 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
         rfm['Cluster RFM'] = customer_cluster_list
         rfm = rfm.merge(customers[['Customer_ID', 'Customer_name']], on='Customer_ID')
         rfm['Customer_ID'] = rfm['Customer_ID'].astype(int)
-        # customer_id_rfm = st.selectbox('Select a customer',
-        #                                (rfm['Customer_ID'].astype(str) + ' - ' + rfm['Customer_name']))
-        # customer_id_rfm = int(customer_id_rfm.split(' - ')[0])
-        # st.subheader(
-        #             f"All the details for each Customer for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
-        #             divider='grey')
-        # st.dataframe(rfm[rfm['Customer_ID'] == customer_id_rfm], use_container_width=True)
         st.subheader(
             f"Details for all customers for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]",
             divider='grey')
         rfm = rfm[['Customer_ID', 'Customer_name', 'Recency', 'Frequency', 'Monetary', 'R', 'F', 'M', 'Cluster RFM', 'Segment 1', 'Segment 2']]
         st.dataframe(rfm, use_container_width=True)
 
-        with st.expander("ML Clusters details"):
-            st.write('The average of the Recency, Frequency, Monetary values for each cluster')
+        with st.expander('Details about the clusters'):
+            st.info('The RFM values represent the average value within each cluster.')
             ml_clusters = rfm.groupby(['Cluster RFM'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
             st.dataframe(ml_clusters)
 
-        with st.expander("RFM Segments using approach 1 details"):
-            segment_1_cluters = rfm.groupby(['Segment 1'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
-            segment_1_details(segment_1_cluters)
+            segment_1_clusters = rfm.groupby(['Segment 1'])[['Recency', 'Frequency', 'Monetary']].mean()
+            segment_1_details(segment_1_clusters)
 
-        with st.expander("RFM Segments using approach 2 details"):
-            segment_2_cluters = rfm.groupby(['Segment 2'], as_index=True)[['Recency', 'Frequency', 'Monetary']].mean()
-            segment_2_details(segment_2_cluters)
+            segment_2_clusters = rfm.groupby(['Segment 2'])[['Recency', 'Frequency', 'Monetary']].mean()
+            segment_2_details(segment_2_clusters)
 
-    return rfm, ml_clusters, segment_1_cluters, segment_2_cluters
+    return rfm, ml_clusters, segment_1_clusters, segment_2_clusters

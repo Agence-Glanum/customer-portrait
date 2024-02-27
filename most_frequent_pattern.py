@@ -20,9 +20,10 @@ def clean_data(df_lines, products, categories, sales_filter, mode):
 def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0.01):
     st.subheader('Most Frequent Items')
     apriori_res = apriori(df, min_support=min_support, use_colnames=True).sort_values(by="support", ascending=False)
-    bar_data = apriori_res[:5]
-    bar_data['itemsets'] = bar_data['itemsets'].apply(list).astype(str)
+    bar_data = apriori_res[:5].copy()
+    bar_data.loc[:, 'itemsets'] = bar_data['itemsets'].apply(list).astype(str)
     st.write(px.bar(x=bar_data['itemsets'], y=bar_data['support'], labels={'x': 'Product', 'y': 'Support value'}))
+    st.write(apriori_res)
 
     st.subheader('Association rules')
     rules = association_rules(apriori_res, metric=metric, min_threshold=min_threshold).sort_values(by='confidence',
@@ -42,9 +43,10 @@ def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0
 def fpgrowth_approach(df, min_support=0.001, metric='lift', min_threshold=0.01):
     st.subheader('Most Frequent Items')
     fpgrowth_res = fpgrowth(df, min_support=min_support, use_colnames=True).sort_values(by="support", ascending=False)
-    bar_data = fpgrowth_res[:5]
-    bar_data['itemsets'] = bar_data['itemsets'].apply(list).astype(str)
+    bar_data = fpgrowth_res[:5].copy()
+    bar_data.loc[:, 'itemsets'] = bar_data['itemsets'].apply(list).astype(str)
     st.write(px.bar(x=bar_data['itemsets'], y=bar_data['support'], labels={'x': 'Product', 'y': 'Support value'}))
+    st.write(fpgrowth_res)
 
     st.subheader('Association rules')
     rules = association_rules(fpgrowth_res, metric=metric, min_threshold=min_threshold).sort_values(by='confidence',

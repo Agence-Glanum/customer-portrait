@@ -1,18 +1,41 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
-def show_boxplot(invoices, orders):
-    fig = make_subplots(rows=1, cols=1)
+def show_plots(invoices, orders):
+    data = {
+        'Orders': orders['Order_ID'].nunique(),
+        'Invoices': invoices['Invoice_ID'].nunique()
+    }
+    fig = px.bar(x=list(data.keys()), y=list(data.values()),
+                 title='Proportion of Invoices and Orders')
+    fig.update_layout(xaxis_title='Sales', yaxis_title='Count')
+    st.write(fig)
 
+    fig = make_subplots(rows=1, cols=1)
     fig.add_trace(go.Box(x=invoices['Total_price'], name='Invoices'))
     fig.add_trace(go.Box(x=orders['Total_price'], name='Orders'))
-    fig.update_layout(xaxis_title='Monetary value')
-    fig.update_layout(showlegend=True)
+    fig.update_layout(title='Order vs. Invoice: Monetary Comparison', xaxis_title='Monetary value', showlegend=True)
+    st.write(fig)
 
-    st.plotly_chart(fig, use_container_width=True)
+    data = orders['Status'].value_counts()
+    fig = px.bar(data, y=data.values, x=data.index,
+                 title='Proportion of Orders status')
+    st.write(fig)
+
+    invoices['Paid'] = invoices['Paid'].replace({0: 'Unpaid', 1: 'Paid'})
+    data = invoices['Paid'].value_counts()
+    fig = px.pie(data, values=data.values, names=data.index,
+                 title='Proportion of Paid Invoices')
+    st.write(fig)
+
+    data = invoices['Invoice_type'].value_counts()
+    fig = px.pie(data, values=data.values, names=data.index,
+                 title='Proportion of Invoice types')
+    st.write(fig)
 
     return
 
@@ -59,7 +82,7 @@ def show_timelines(directory, snapshot_start_date, snapshot_end_date, customer_i
     traces_to_hide = ['Draft Orders', 'Cancelled Orders']
     fig2.for_each_trace(lambda trace: trace.update(visible='legendonly') if trace.name in traces_to_hide else ())
 
-    fig2.update_layout(xaxis_title='Date', yaxis_title='Monetary value')
+    fig2.update_layout(title='Timeline of Sales and Orders', xaxis_title='Date', yaxis_title='Monetary value')
 
     fig2.add_shape(type='rect',
                    x0=snapshot_start_date,

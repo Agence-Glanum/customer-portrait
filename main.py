@@ -36,7 +36,7 @@ def get_filters():
         companies = get_folder_names('./data')
 
         directory = st.selectbox(
-            'Choose which data to analyse', companies)
+            'Choose which data to analyze', companies)
 
         sales_filter = st.radio(
             'Analyze your sales based on',
@@ -67,21 +67,17 @@ def data_main():
     home_tab, geo_tab, rfm_seg_tab, mba_tab, customer_tab = st.tabs(
         ['Home', 'Geodemographic profiling', 'RFM Segmentation', 'MBA', 'Overview'])
 
-    df_sales, df_lines = invoices, invoices_lines
     if sales_filter == 'Invoice':
-        df_sales = invoices[
-            (invoices['Paid'] == 1) & (invoices['Customer_ID'] is not None)]
-        df_lines = invoices_lines[(invoices_lines['Quantity'] > 0)]
-
-    if sales_filter == 'Order':
-        df_sales = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
-                          & (orders['Customer_ID'] is not None)]
-        df_lines = orders_lines[(orders_lines['Quantity'] > 0)]
+        df_sales = invoices
+        df_lines = invoices_lines
+    else:
+        df_sales = orders
+        df_lines = orders_lines
 
     if not df_sales.empty and not df_lines.empty:
         with home_tab:
             cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
-            home_main_function(invoices, orders, customers, products, categories, cltv_df, snapshot_start_date, snapshot_end_date, directory)
+            home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type, snapshot_start_date, snapshot_end_date, directory)
 
         with geo_tab:
             st.subheader(
@@ -126,16 +122,12 @@ def marketing_main():
                                                                                                            directory)
     statistics_tab, overview_tab = st.tabs(['Statistics', 'Overview'])
 
-    df_sales, df_lines = invoices, invoices_lines
     if sales_filter == 'Invoice':
-        df_sales = invoices[
-            (invoices['Paid'] == 1) & (invoices['Total_price'] > 0) & (invoices['Customer_ID'] is not None)]
-        df_lines = invoices_lines[(invoices_lines['Quantity'] > 0) & (invoices_lines['Total_price'] > 0)]
-
-    if sales_filter == 'Order':
-        df_sales = orders[(orders['Status'] != 'draft') & (orders['Status'] != 'cancelled')
-                          & (orders['Total_price'] > 0) & (orders['Customer_ID'] is not None)]
-        df_lines = orders_lines[(orders_lines['Quantity'] > 0) & (orders_lines['Total_price'] > 0)]
+        df_sales = invoices
+        df_lines = invoices_lines
+    else:
+        df_sales = orders
+        df_lines = orders_lines
 
     if not df_sales.empty and not df_lines.empty:
         with statistics_tab:

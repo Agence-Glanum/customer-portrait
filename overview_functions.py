@@ -4,6 +4,16 @@ from utils.data_viz import show_timelines
 from utils.utility_functions import get_customer_location, get_cluster_location
 
 
+def show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df):
+    with st.expander('Details about the clusters'):
+        st.info('The RFM values represent the average value within each cluster.')
+        st.dataframe(ml_clusters)
+        st.dataframe(segment_1_clusters)
+        st.dataframe(segment_2_clusters)
+        st.dataframe(product_grouped_df)
+        st.dataframe(category_grouped_df)
+
+
 def customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date):
     customer_id = st.selectbox('Customers',
                                (overview_data['Customer_ID'].astype(str) + ' - ' + overview_data['Customer_name']))
@@ -80,23 +90,17 @@ def cluster_overview_function(address, overview_data):
 def overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
                            product_grouped_df, category_grouped_df, product_recommendation, category_recommendation,
                            directory, snapshot_start_date, snapshot_end_date, admin, sales_filter, customer_type):
-    customer_overview_tab, cluster_overview_tab, data_tab = st.tabs(['Customer overview', 'Cluster overview', 'Download data'])
-
-    def show_details():
-        with st.expander('Details about the clusters'):
-            st.dataframe(ml_clusters)
-            st.dataframe(segment_1_clusters)
-            st.dataframe(segment_2_clusters)
-            st.dataframe(product_grouped_df)
-            st.dataframe(category_grouped_df)
+    customer_overview_tab, cluster_overview_tab, data_tab = st.tabs(
+        ['Customer overview', 'Cluster overview', 'Download data'])
 
     with customer_overview_tab:
         customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date)
-        show_details()
+        show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df)
 
     with cluster_overview_tab:
         cluster_overview_function(address, overview_data)
-        show_details()
+        show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df)
+
     with data_tab:
         if admin:
             if st.button('Send Data to team Marketing', type='primary'):
