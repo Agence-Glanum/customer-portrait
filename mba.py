@@ -32,13 +32,8 @@ def show_data(categories, products, directory, snapshot_start_date, snapshot_end
     return result_df
 
 
-def show_mba(products, product_clusters, category_clusters, apriori_rules_products, fpgrowth_rules_products,
+def show_mba(product_clusters, category_clusters, apriori_rules_products, fpgrowth_rules_products,
              apriori_rules_categories, fpgrowth_rules_categories):
-    product_ids = [col for col in product_clusters.columns if col != 'Cluster MBA']
-    # product_dic = {col: products[products['Product_ID'] == col]['Product_name'] for col in
-    #                product_ids}
-    # product_clusters = product_clusters.rename(columns=product_dic)
-
     st.info('The product and category clusters are not the same !')
 
     product_melted_df = pd.melt(product_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
@@ -72,16 +67,20 @@ def show_mba(products, product_clusters, category_clusters, apriori_rules_produc
 
 
 def mba_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
-                      snapshot_end_date, directory, sales_filter):
+                      snapshot_end_date, directory, sales_filter, customer_type):
     mba_statistics, prod_aff_tab, most_freq_tab, product_pred_tab, data_tab = st.tabs(
         ['Statistics', 'Product affinity', 'Most Frequent Pattern', 'Next product prediction', 'Download data'])
     with mba_statistics:
         mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
-                                     snapshot_end_date, directory, sales_filter)
+                                     snapshot_end_date, directory, sales_filter, customer_type)
     with prod_aff_tab:
+        st.header(f'Basket Clusters', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
         product_clusters, category_clusters = prod_aff_main_function(df_sales, df_lines, categories, products,
-                                                                     directory, snapshot_start_date,
-                                                                     snapshot_end_date, sales_filter)
+                                                                     sales_filter)
     with most_freq_tab:
         apriori_rules_products, fpgrowth_rules_products, apriori_rules_categories, fpgrowth_rules_categories = most_frequent_pattern_main_function(
             df_lines, products, categories,
@@ -90,7 +89,7 @@ def mba_main_function(df_sales, df_lines, products, categories, snapshot_start_d
         next_prod_pred_main_function(df_sales, df_lines, apriori_rules_products, fpgrowth_rules_products, products, categories)
     with data_tab:
         product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = show_mba(
-            products, product_clusters, category_clusters,
+            product_clusters, category_clusters,
             apriori_rules_products, fpgrowth_rules_products,
             apriori_rules_categories, fpgrowth_rules_categories)
     return product_clusters, category_clusters, product_grouped_df, category_grouped_df, product_recommendation, category_recommendation

@@ -204,122 +204,68 @@ def show_customer_segment_distribution(rfm):
 
 
 def show_customer_segment_distribution_rfm(rfm):
+    fig, axes = plt.subplots(nrows=5, ncols=5, sharex=False, sharey=True, figsize=(15, 15))
+    r_range = range(1, 6)
+    f_range = range(1, 6)
 
-    # fig, axes = plt.subplots(nrows=5, ncols=5, sharex=False, sharey=True, figsize=(15, 15))
-    # r_range = range(1, 6)
-    # f_range = range(1, 6)
-    #
-    # for f in f_range:
-    #     for r in r_range:
-    #         y = rfm[(rfm['R'] == r) & (rfm['F'] == f)]['M'].value_counts().sort_index()
-    #         x = y.index
-    #         ax = axes[5 - f, r - 1]
-    #         bars = ax.bar(x, y, color='white')
-    #         ax.set_xticks(x)
-    #         if f == 1:
-    #             if r == 3:
-    #                 ax.set_xlabel('{}\nR'.format(r), va='top', color='black')
-    #             else:
-    #                 ax.set_xlabel('{}\n'.format(r), va='top', color='black')
-    #         if r == 1:
-    #             if f == 3:
-    #                 ax.set_ylabel('F\n{}'.format(f), color='black')
-    #             else:
-    #                 ax.set_ylabel(f, color='black')
-    #         ax.set_frame_on(False)
-    #         ax.tick_params(left=False, labelleft=False, bottom=False)
-    #         ax.tick_params(axis='x', colors='black')
-    #
-    #         for bar in bars:
-    #             value = bar.get_height()
-    #             if value == y.max():
-    #                 bar.set_color('firebrick')
-    #             ax.text(bar.get_x() + bar.get_width() / 2,
-    #                     value,
-    #                     int(value),
-    #                     ha='center',
-    #                     va='bottom',
-    #                     color='black')
-    #
-    # def legend_function(list_, color_):
-    #     for element in list_:
-    #         axes[element].set_frame_on(True)
-    #         axes[element].set_facecolor(color_)
-    #         axes[element].grid(visible=False)
-    #
-    # legend_function([(3, 0), (3, 1), (4, 0), (4, 1)], '#83c9ff')
-    # legend_function([(1, 0), (1, 1), (2, 0), (2, 1)], '#29b09d')
-    # legend_function([(0, 0), (0, 1)], '#ff8700')
-    # legend_function([(4, 2), (3, 2)], '#7defa1')
-    # legend_function([(2, 2)], '#757d79')
-    # legend_function([(0, 2), (0, 3), (1, 2), (1, 3)], '#0068c9')
-    # legend_function([(4, 3)], '#ff2b2b')
-    # legend_function([(2, 3), (3, 3), (2, 4), (3, 4)], '#904cd9')
-    # legend_function([(4, 4)], '#ffabab')
-    # legend_function([(0, 4), (1, 4)], '#ffd16a')
-    #
-    # legend_handles = [
-    #     plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=label)
-    #     for color, label in [('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
-    #                          ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'), ('#0068c9', 'Loyal customers'),
-    #                          ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
-    #                          ('#ffd16a', 'Champions')]]
-    #
-    # fig.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(1.1, 1.05))
-    # st.write(fig)
+    for f in f_range:
+        for r in r_range:
+            y = rfm[(rfm['R'] == r) & (rfm['F'] == f)]['M'].value_counts().sort_index()
+            x = y.index
+            ax = axes[5 - f, r - 1]
+            bars = ax.bar(x, y, color='white')
+            ax.set_xticks(x)
+            if f == 1:
+                if r == 3:
+                    ax.set_xlabel('{}\nR'.format(r), va='top', color='black')
+                else:
+                    ax.set_xlabel('{}\n'.format(r), va='top', color='black')
+            if r == 1:
+                if f == 3:
+                    ax.set_ylabel('F\n{}'.format(f), color='black')
+                else:
+                    ax.set_ylabel(f, color='black')
+            ax.set_frame_on(False)
+            ax.tick_params(left=False, labelleft=False, bottom=False)
+            ax.tick_params(axis='x', colors='black')
 
-    ###ici
-    fig = make_subplots(rows=5, cols=5, shared_yaxes=True)
+            for bar in bars:
+                value = bar.get_height()
+                if value == y.max():
+                    bar.set_color('firebrick')
+                ax.text(bar.get_x() + bar.get_width() / 2,
+                        value,
+                        int(value),
+                        ha='center',
+                        va='bottom',
+                        color='black')
 
-    rfm_data = np.random.randint(0, 10, size=(5, 5, 5))
+    def legend_function(list_, color_):
+        for element in list_:
+            axes[element].set_frame_on(True)
+            axes[element].set_facecolor(color_)
+            axes[element].grid(visible=False)
 
-    colors = ['#83c9ff', '#29b09d', '#ff8700', '#7defa1', '#757d79', '#0068c9', '#ff2b2b', '#904cd9', '#ffabab',
-              '#ffd16a']
+    legend_function([(3, 0), (3, 1), (4, 0), (4, 1)], '#83c9ff')
+    legend_function([(1, 0), (1, 1), (2, 0), (2, 1)], '#29b09d')
+    legend_function([(0, 0), (0, 1)], '#ff8700')
+    legend_function([(4, 2), (3, 2)], '#7defa1')
+    legend_function([(2, 2)], '#757d79')
+    legend_function([(0, 2), (0, 3), (1, 2), (1, 3)], '#0068c9')
+    legend_function([(4, 3)], '#ff2b2b')
+    legend_function([(2, 3), (3, 3), (2, 4), (3, 4)], '#904cd9')
+    legend_function([(4, 4)], '#ffabab')
+    legend_function([(0, 4), (1, 4)], '#ffd16a')
 
     legend_handles = [
-        ('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
-        ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'), ('#0068c9', 'Loyal customers'),
-        ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
-        ('#ffd16a', 'Champions')
-    ]
+        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=label)
+        for color, label in [('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
+                             ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'), ('#0068c9', 'Loyal customers'),
+                             ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
+                             ('#ffd16a', 'Champions')]]
 
-    for f in range(5):
-        for r in range(5):
-            y = rfm_data[r][f]
-            x = np.arange(len(y))
-
-            max_index = np.argmax(y)
-            colors[max_index] = 'firebrick'
-
-            fig.add_trace(
-                go.Bar(x=x, y=y, marker_color=colors.copy(), showlegend=False),
-                row=f + 1, col=r + 1
-            )
-
-            if f == 0:
-                if r == 2:
-                    fig.update_xaxes(title_text=f"R{r + 1}", row=f + 1, col=r + 1)
-                else:
-                    fig.update_xaxes(title_text=f"R{r + 1}", row=f + 1, col=r + 1)
-            if r == 0:
-                if f == 2:
-                    fig.update_yaxes(title_text=f"F{f + 1}", row=f + 1, col=r + 1)
-                else:
-                    fig.update_yaxes(title_text=f"F{f + 1}", row=f + 1, col=r + 1)
-
-    for color, label in legend_handles:
-        fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', marker=dict(color=color), name=label))
-
-    fig.update_layout(
-        title="RFM Analysis",
-        height=800,
-        width=800,
-        showlegend=True
-    )
-
+    fig.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(1.1, 1.05))
     st.write(fig)
-
-    ###fin
 
     colors = {
         'Hibernating': '#83c9ff',
@@ -376,7 +322,7 @@ def segment_1_details(df):
             ['Risky', 'It is the customer group with the lowest purchase frequency and up-to-dateness.']]
     data = pd.DataFrame(data, columns=['Segment 1', 'Description'])
     data = pd.merge(data, df, on='Segment 1').set_index('Segment 1')
-    st.table(data)
+    st.dataframe(data)
     return
 
 
@@ -417,7 +363,7 @@ def segment_2_details(df):
             ]
     data = pd.DataFrame(data, columns=['Segment 2', 'Description', 'Strategies'])
     data = pd.merge(data, df, on='Segment 2').set_index('Segment 2')
-    st.table(data)
+    st.dataframe(data)
     return
 
 
@@ -475,11 +421,13 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
         rfm['Cluster RFM'] = customer_cluster_list
         rfm = rfm.merge(customers[['Customer_ID', 'Customer_name']], on='Customer_ID')
         rfm['Customer_ID'] = rfm['Customer_ID'].astype(int)
-        st.subheader(
-            f'Details for all customers for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}], based on :blue[{sales_filter}]',
-            divider='grey')
+        st.subheader(f'Details for all customers', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
         rfm = rfm[['Customer_ID', 'Customer_name', 'Recency', 'Frequency', 'Monetary', 'R', 'F', 'M', 'Cluster RFM',
-                   'Segment 1', 'Segment 2']]
+                   'Segment 1', 'Segment 2']].set_index('Customer_ID')
         st.dataframe(rfm, use_container_width=True)
 
         with st.expander('Details about the clusters'):

@@ -41,8 +41,10 @@ def show_eda(df_sales, df_lines, products, categories, sales_filter):
 
 
 def mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
-                                 snapshot_end_date, directory, sales_filter):
-    st.header(
-        f'General statistics for company :blue[{directory}], from :blue[{snapshot_start_date}] '
-        f'to :blue[{snapshot_end_date}], based on :blue[{sales_filter}]')
+                                 snapshot_end_date, directory, sales_filter, customer_type):
+    st.header(f'MBA KPIs', divider='grey')
+    st.info(f'Company: :blue[{directory}]' +
+            f'\n\nData type: :blue[{sales_filter}]' +
+            f'\n\nCustomer type: :blue[{customer_type}]' +
+            f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
     show_eda(df_sales, df_lines, products, categories, sales_filter)

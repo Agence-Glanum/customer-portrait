@@ -92,7 +92,7 @@ def data_main():
         with mba_tab:
             product_clusters, category_clusters, product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = mba_main_function(
                 df_sales, df_lines, products, categories, snapshot_start_date,
-                snapshot_end_date, directory, sales_filter)
+                snapshot_end_date, directory, sales_filter, customer_type)
 
         with customer_tab:
             overview_data = pd.merge(rfm, product_clusters.reset_index()[['Customer_ID', 'Cluster MBA']],
@@ -135,7 +135,7 @@ def marketing_main():
             home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type,
                                snapshot_start_date, snapshot_end_date, directory)
             mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
-                                         snapshot_end_date, directory, sales_filter)
+                                         snapshot_end_date, directory, sales_filter, customer_type)
 
         with overview_tab:
             try:
