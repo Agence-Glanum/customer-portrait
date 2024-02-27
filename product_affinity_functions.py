@@ -14,15 +14,15 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import make_scorer
 
 
-def clean_data(categories, products, df_sales, df_lines, data_filter, transformed_sales_filter):
+def clean_data(categories, products, df_sales, df_lines, data_filter, sales_filter):
     df_sales.rename(columns={'Total_price': 'Final_price'}, inplace=True)
-    df = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID').merge(products, on='Product_ID')
+    df = df_sales.merge(df_lines, on=sales_filter + '_ID').merge(products, on='Product_ID')
     df = df[['Product_name', 'Customer_ID', data_filter]]
     df = df.groupby(['Customer_ID', 'Product_name'])[data_filter].sum().reset_index()
     df = df.pivot(index='Customer_ID', columns='Product_name', values=data_filter).fillna(0.0)
     df.columns = [str(col) for col in df.columns]
 
-    df_cat = df_sales.merge(df_lines, on=transformed_sales_filter + '_ID').merge(products, on='Product_ID').merge(
+    df_cat = df_sales.merge(df_lines, on=sales_filter + '_ID').merge(products, on='Product_ID').merge(
         categories, on='Category_ID')
     df_cat = df_cat[['Product_name', 'Category_name', 'Customer_ID', data_filter]]
     df_cat = df_cat.groupby(['Customer_ID', 'Category_name'])[data_filter].sum().reset_index()
@@ -130,13 +130,11 @@ def agglomerative_model(features, mode, nb_clusters):
     return features
 
 
-def prod_aff_main_function(df_sales, df_lines, categories, products, directory, snapshot_start_date, snapshot_end_date,
-                           transformed_sales_filter):
-    st.header(f'Basket Clusters for company :blue[{directory}], from :blue[{snapshot_start_date}] '
-              f'to :blue[{snapshot_end_date}], based on :blue[{transformed_sales_filter}]')
+def prod_aff_main_function(df_sales, df_lines, categories, products, sales_filter):
+
     data_filter = st.radio('Analyze the Data based on', ['Quantity', 'Total_price'], horizontal=True)
     product_features, category_features = clean_data(categories, products, df_sales, df_lines, data_filter,
-                                                     transformed_sales_filter)
+                                                     sales_filter)
 
     with st.expander('Product Clusters'):
         st.subheader('Product Clusters')
