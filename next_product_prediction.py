@@ -13,15 +13,27 @@ def recommend_product(df, product):
         return 'No recommendation available'
 
 
-def next_prod_pred_main_function(df_sales, df_lines, apriori_rules, fpgrowth_rules, products, categories):
+def recommend_category(df, category):
+    df.sort_values('lift', ascending=False, inplace=True)
+    recommendation_list = []
+    for index, row in df.iterrows():
+        if category in row["antecedents_"]:
+            recommendation_list.append(row["consequents_"])
+    try:
+        return recommendation_list[0]
+    except IndexError:
+        return 'No recommendation available'
+
+
+def next_prod_pred_main_function(apriori_rules_products, apriori_rules_categories, products, categories):
+    st.subheader('Next Product')
     product = st.selectbox('Choose a product', products['Product_name'])
+    st.write(recommend_product(apriori_rules_products, product))
 
-    st.header('Product recommendation', divider='grey')
-    with st.expander('Apriori and FP growth approaches'):
-        st.subheader('First approach - Apriori')
-        st.write(recommend_product(apriori_rules, product))
+    st.divider()
 
-        st.subheader('Second approach - FP growth')
-        st.write(recommend_product(fpgrowth_rules, product))
+    st.subheader('Next Category')
+    category = st.selectbox('Choose a category', categories['Category_name'])
+    st.write(recommend_category(apriori_rules_categories, category))
 
     return

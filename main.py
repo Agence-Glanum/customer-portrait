@@ -3,7 +3,7 @@ import datetime
 import pandas as pd
 import streamlit as st
 from mba import mba_main_function
-from home_functions import home_main_function, show_geodemographic_profiling
+from home_functions import home_main_function, geodemographic_profiling_main_function
 from rfm_segmentation_functions import rfm_main_function
 from mba_statistics import mba_statistics_main_function
 from utils.get_data import filter_data, get_dates
@@ -80,9 +80,8 @@ def data_main():
             home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type, snapshot_start_date, snapshot_end_date, directory)
 
         with geo_tab:
-            st.subheader(
-                f'Heatmap for company :blue[{directory}], from :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]')
-            show_geodemographic_profiling(address)
+            geodemographic_profiling_main_function(address, directory, sales_filter, customer_type,
+                                                   snapshot_start_date, snapshot_end_date)
 
         with rfm_seg_tab:
             rfm, ml_clusters, segment_1_clusters, segment_2_clusters = rfm_main_function(
