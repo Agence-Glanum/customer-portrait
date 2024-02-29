@@ -16,7 +16,8 @@ def get_data_from_csv(directory):
 
 
 def transform_data(directory):
-    address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = get_data_from_csv(directory)
+    address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = get_data_from_csv(
+        directory)
 
     invoices['Invoice_date'] = pd.to_datetime(invoices['Invoice_date'])
     orders['Order_date'] = pd.to_datetime(orders['Order_date'])
@@ -34,7 +35,8 @@ def get_dates(directory):
 
 
 def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_date, directory):
-    addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
+    addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(
+        directory)
 
     # Get Customers based on the filter
     customers = customers[(customers['Customer_type'] == client_type)]

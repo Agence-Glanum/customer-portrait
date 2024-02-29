@@ -39,7 +39,7 @@ def compute_lifetime_value(df, df_lines, sales_filter):
     repeat_rate = cltv_df[cltv_df['Num_transactions'] > 1].shape[0] / cltv_df.shape[0]
     churn_rate = 1 - repeat_rate
     cltv_df['CLTV'] = ((cltv_df['AOV'] * purchase_freq) / churn_rate) * .10
-    cltv_df = cltv_df[['Customer_ID', 'CLTV']]
+    cltv_df = cltv_df[['Customer_ID', 'Age', 'CLTV']]
 
     return cltv_df
 
@@ -50,7 +50,7 @@ def get_customers_heatmap(address):
     with open('./utils/Geo/GlobalMap/dpts.json', 'r') as f:
         data = json.load(f)
 
-    corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
+    corsica = pd.read_csv('utils/Geo/base-officielle-codes-postaux.csv')
     zip_codes = address.drop_duplicates()
 
     mask = (zip_codes['Country'] != 'FR') & (~zip_codes['Country'].isnull())
@@ -58,8 +58,9 @@ def get_customers_heatmap(address):
     zip_codes = zip_codes.dropna(subset=['Zip_code', 'City', 'Country'])
 
     selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
-    selected_entries.loc[:, "nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
-    selected_entries.loc[:, "code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+    selected_entries.loc[:, 'nom_de_la_commune'] = selected_entries['nom_de_la_commune'].str.replace(' ',
+                                                                                                     '-').str.capitalize()
+    selected_entries.loc[:, 'code_commune_insee'] = selected_entries['code_commune_insee'].str[:2]
     zip_codes['Zip_code'] = zip_codes['Zip_code'].astype(str)
     selected_entries.loc[:, 'code_postal'] = selected_entries['code_postal'].astype(str)
     zip_codes['Zip_code'] = zip_codes.apply(
@@ -70,7 +71,7 @@ def get_customers_heatmap(address):
         axis=1
     )
 
-    zip_codes["Zip_code"] = zip_codes["Zip_code"].str[:2]
+    zip_codes['Zip_code'] = zip_codes['Zip_code'].str[:2]
     result = zip_codes.groupby('Zip_code').size().reset_index(name='Count')
     result['Zip_code'] = result['Zip_code'].apply(lambda x: x[1:] if len(x) == 2 and x.startswith('0') else x)
 
@@ -83,16 +84,16 @@ def get_customers_heatmap(address):
 
     df_gps = pd.json_normalize(gps_json_copie)
     df_countries = pd.json_normalize(country_json_copie)
-    df_countries_renamed = df_countries.rename(columns={"latitude": "lat", "longitude": "lng", "alpha2": "numero"})
+    df_countries_renamed = df_countries.rename(columns={'latitude': 'lat', 'longitude': 'lng', 'alpha2': 'numero'})
 
     result['Zip_code'] = result['Zip_code'].astype(str)
 
     merged_df_dpts = pd.merge(df_gps, result, how='left', left_on='numero', right_on='Zip_code')
-    merged_df_dpts_dropped = merged_df_dpts.drop("nomLong", axis=1)
+    merged_df_dpts_dropped = merged_df_dpts.drop('nomLong', axis=1)
 
     merged_df_countries = pd.merge(df_countries_renamed, result, how='left', left_on='numero', right_on='Zip_code')
-    merged_df_countries_dropped = merged_df_countries.drop(columns=["numeric", "alpha3"])
-    merged_df_countries_dropped = merged_df_countries_dropped.rename(columns={"country": "nomShort"})
+    merged_df_countries_dropped = merged_df_countries.drop(columns=['numeric', 'alpha3'])
+    merged_df_countries_dropped = merged_df_countries_dropped.rename(columns={'country': 'nomShort'})
     result = pd.concat([merged_df_countries_dropped, merged_df_dpts_dropped], ignore_index=True)
 
     fig = px.density_mapbox(result,
@@ -100,22 +101,24 @@ def get_customers_heatmap(address):
                             lat='lat',
                             lon='lng',
                             z='Count',
-                            color_continuous_scale="viridis",
+                            color_continuous_scale='viridis',
                             radius=10,
-                            center={"lat": 46.6031, "lon": 1.7394},
+                            center={'lat': 46.6031, 'lon': 1.7394},
                             zoom=2,
-                            mapbox_style="carto-positron")
+                            mapbox_style='carto-positron')
+    fig.update_layout(title='Heatmap of Customers')
     st.write(fig)
 
-    return
+    return fig
 
 
 def get_customer_location(address, customer_id):
-    corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
+    corsica = pd.read_csv('utils/Geo/base-officielle-codes-postaux.csv')
 
     selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
-    selected_entries.loc[:, "nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
-    selected_entries.loc[:, "code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+    selected_entries.loc[:, 'nom_de_la_commune'] = selected_entries['nom_de_la_commune'].str.replace(' ',
+                                                                                                     '-').str.capitalize()
+    selected_entries.loc[:, 'code_commune_insee'] = selected_entries['code_commune_insee'].str[:2]
 
     address['Zip_code'] = address['Zip_code'].astype(str)
     selected_entries.loc[:, 'code_postal'] = selected_entries['code_postal'].astype(str)
@@ -130,9 +133,9 @@ def get_customer_location(address, customer_id):
 
     customer_zip = address[address['Customer_ID'] == customer_id]
     customer_zip.loc[:, 'Zip_code'] = customer_zip['Zip_code'].str[:2]
-    customer_zip.loc[:, "City"] = customer_zip["City"].str.replace(" ", "-").str.capitalize()
+    customer_zip.loc[:, 'City'] = customer_zip['City'].str.replace(' ', '-').str.capitalize()
 
-    if (customer_zip["Country"] == "FR").any():
+    if (customer_zip['Country'] == 'FR').any():
         geojson_france = './utils/Geo/contour-des-departements.geojson'
         gdf_departements = gpd.read_file(geojson_france)
 
@@ -143,9 +146,8 @@ def get_customer_location(address, customer_id):
                                           range_color=(0, 12),
                                           mapbox_style='carto-positron',
                                           zoom=3.5, center={'lat': 46.6031, 'lon': 1.8883},
-                                          opacity=0.8,
-                                          )
-        france_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
+                                          opacity=0.8)
+        france_map.update_layout(title='Customer Location')
         st.write(france_map)
 
     else:
@@ -161,20 +163,20 @@ def get_customer_location(address, customer_id):
                                          range_color=(0, 12),
                                          mapbox_style='carto-positron',
                                          zoom=1, center={'lat': 46.6031, 'lon': 1.8883},
-                                         opacity=0.8,
-                                         )
-        world_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
+                                         opacity=0.8)
+        world_map.update_layout(title='Customer Location')
         st.write(world_map)
 
     return
 
 
 def get_cluster_location(address, customer_ids):
-    corsica = pd.read_csv("utils/Geo/base-officielle-codes-postaux.csv")
+    corsica = pd.read_csv('utils/Geo/base-officielle-codes-postaux.csv')
 
     selected_entries = corsica[corsica['code_commune_insee'].str.startswith(('2A', '2B'))]
-    selected_entries.loc[:, "nom_de_la_commune"] = selected_entries["nom_de_la_commune"].str.replace(" ", "-").str.capitalize()
-    selected_entries.loc[:, "code_commune_insee"] = selected_entries["code_commune_insee"].str[:2]
+    selected_entries.loc[:, 'nom_de_la_commune'] = selected_entries['nom_de_la_commune'].str.replace(' ',
+                                                                                                     '-').str.capitalize()
+    selected_entries.loc[:, 'code_commune_insee'] = selected_entries['code_commune_insee'].str[:2]
 
     address['Zip_code'] = address['Zip_code'].astype(str)
     selected_entries.loc[:, 'code_postal'] = selected_entries['code_postal'].astype(str)
@@ -189,12 +191,12 @@ def get_cluster_location(address, customer_ids):
 
     customer_zips = address[address['Customer_ID'].isin(customer_ids)]
     customer_zips.loc[:, 'Zip_code'] = customer_zips['Zip_code'].str[:2]
-    customer_zips.loc[:, "City"] = customer_zips["City"].str.replace(" ", "-").str.capitalize()
+    customer_zips.loc[:, 'City'] = customer_zips['City'].str.replace(' ', '-').str.capitalize()
 
     geojson_france = './utils/Geo/contour-des-departements.geojson'
     gdf_departements = gpd.read_file(geojson_france)
 
-    france_map = px.choropleth_mapbox(customer_zips[customer_zips["Country"] == "FR"],
+    france_map = px.choropleth_mapbox(customer_zips[customer_zips['Country'] == 'FR'],
                                       geojson=gdf_departements, locations='Zip_code',
                                       featureidkey='properties.code',
                                       color='Address_type',
@@ -204,8 +206,7 @@ def get_cluster_location(address, customer_ids):
                                       zoom=3.5, center={'lat': 46.6031, 'lon': 1.8883},
                                       opacity=0.8,
                                       )
-    france_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
-    st.subheader('In France')
+    france_map.update_layout(title='Cluster Location in France')
     st.write(france_map)
 
     geojson_world = './utils/Geo/curiexplore-pays.geojson'
@@ -213,7 +214,8 @@ def get_cluster_location(address, customer_ids):
     gdf_occurences2 = gdf_departements2.merge(customer_zips['Country'], how='left', left_on='code',
                                               right_on='Country')
     gdf_occurences2['Country'] = gdf_occurences2['Country'].fillna(0)
-    world_map = px.choropleth_mapbox(customer_zips[customer_zips["Country"] != "FR"], geojson=gdf_occurences2, locations='Country',
+    world_map = px.choropleth_mapbox(customer_zips[customer_zips['Country'] != 'FR'], geojson=gdf_occurences2,
+                                     locations='Country',
                                      color='Address_type',
                                      featureidkey='properties.code',
                                      color_continuous_scale='Viridis',
@@ -222,9 +224,7 @@ def get_cluster_location(address, customer_ids):
                                      zoom=1, center={'lat': 46.6031, 'lon': 1.8883},
                                      opacity=0.8,
                                      )
-    world_map.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0}, showlegend=True)
-    if not customer_zips[customer_zips["Country"] != "FR"].empty:
-        st.subheader('Worldwide')
+    world_map.update_layout(title='Cluster Location worldwide')
+    if not customer_zips[customer_zips['Country'] != 'FR'].empty:
         st.write(world_map)
     return
-

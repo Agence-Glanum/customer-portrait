@@ -112,7 +112,8 @@ def customer_segmentation_model(scaled_features, nb_clusters):
     kmeans = KMeans(n_clusters=nb_clusters, init='k-means++', n_init='auto')
     scaled_features = pd.DataFrame(scaled_features, columns=['Recency', 'Frequency', 'Monetary'])
     kmeans.fit(scaled_features.values)
-    st.success('Silhouette score : ' + str(round(silhouette_score(scaled_features, kmeans.labels_, metric='euclidean'), 2)))
+    st.success(
+        'Silhouette score : ' + str(round(silhouette_score(scaled_features, kmeans.labels_, metric='euclidean'), 2)))
 
     pred = kmeans.predict(scaled_features)
     scaled_features['Cluster RFM'] = ['Cluster ' + str(i) for i in pred]
@@ -260,7 +261,8 @@ def show_customer_segment_distribution_rfm(rfm):
     legend_handles = [
         plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=label)
         for color, label in [('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
-                             ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'), ('#0068c9', 'Loyal customers'),
+                             ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'),
+                             ('#0068c9', 'Loyal customers'),
                              ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
                              ('#ffd16a', 'Champions')]]
 

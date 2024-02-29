@@ -3,7 +3,13 @@ from utils.data_viz import show_timelines
 from utils.utility_functions import compute_kpis, get_customers_heatmap
 
 
-def show_geodemographic_profiling(address):
+def geodemographic_profiling_main_function(address, directory, sales_filter, customer_type,
+                                           snapshot_start_date, snapshot_end_date):
+    st.subheader(f'Geographical distribution of Customers', divider='grey')
+    st.info(f'Company: :blue[{directory}]' +
+            f'\n\nData type: :blue[{sales_filter}]' +
+            f'\n\nCustomer type: :blue[{customer_type}]' +
+            f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
     address_type = st.radio('Address type', ['Invoice', 'Delivery'], horizontal=True)
 
     if address_type == 'Invoice':
@@ -17,7 +23,8 @@ def show_geodemographic_profiling(address):
     return
 
 
-def home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type, snapshot_start_date, snapshot_end_date, directory):
+def home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type, snapshot_start_date,
+                       snapshot_end_date, directory):
     st.subheader('General KPIs', divider='grey')
     st.info(f'Company: :blue[{directory}]' +
             f'\n\nData type: :blue[Invoices and Orders]' +
