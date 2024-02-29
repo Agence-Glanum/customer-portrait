@@ -205,68 +205,47 @@ def show_customer_segment_distribution(rfm):
 
 
 def show_customer_segment_distribution_rfm(rfm):
-    fig, axes = plt.subplots(nrows=5, ncols=5, sharex=False, sharey=True, figsize=(15, 15))
-    r_range = range(1, 6)
-    f_range = range(1, 6)
+    legend = [
+        ('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
+        ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'), ('#0068c9', 'Loyal customers'),
+        ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
+        ('#ffd16a', 'Champions')
+    ]
 
-    for f in f_range:
-        for r in r_range:
-            y = rfm[(rfm['R'] == r) & (rfm['F'] == f)]['M'].value_counts().sort_index()
-            x = y.index
-            ax = axes[5 - f, r - 1]
-            bars = ax.bar(x, y, color='white')
-            ax.set_xticks(x)
-            if f == 1:
-                if r == 3:
-                    ax.set_xlabel('{}\nR'.format(r), va='top', color='black')
-                else:
-                    ax.set_xlabel('{}\n'.format(r), va='top', color='black')
-            if r == 1:
-                if f == 3:
-                    ax.set_ylabel('F\n{}'.format(f), color='black')
-                else:
-                    ax.set_ylabel(f, color='black')
-            ax.set_frame_on(False)
-            ax.tick_params(left=False, labelleft=False, bottom=False)
-            ax.tick_params(axis='x', colors='black')
+    color_mapping = {
+        '#83c9ff': [(1, 0), (1, 1), (0, 0), (0, 1)],
+        '#29b09d': [(3, 0), (3, 1), (2, 0), (2, 1)],
+        '#ff8700': [(4, 0), (4, 1)],
+        '#7defa1': [(0, 2), (1, 2)],
+        '#757d79': [(2, 2)],
+        '#0068c9': [(4, 2), (4, 3), (3, 2), (3, 3)],
+        '#ff2b2b': [(0, 3)],
+        '#904cd9': [(2, 3), (1, 3), (2, 4), (1, 4)],
+        '#ffabab': [(0, 4)],
+        '#ffd16a': [(4, 4), (3, 4)]
+    }
 
-            for bar in bars:
-                value = bar.get_height()
-                if value == y.max():
-                    bar.set_color('firebrick')
-                ax.text(bar.get_x() + bar.get_width() / 2,
-                        value,
-                        int(value),
-                        ha='center',
-                        va='bottom',
-                        color='black')
+    fig = make_subplots(rows=5, cols=5, shared_yaxes=True,
+                        subplot_titles=[f"F{i}, R{j}" for i in range(5, 0, -1) for j in range(1, 6)])
 
-    def legend_function(list_, color_):
-        for element in list_:
-            axes[element].set_frame_on(True)
-            axes[element].set_facecolor(color_)
-            axes[element].grid(visible=False)
+    for f in range(5):
+        for r in range(5):
+            filtered_data = rfm[(rfm['R'] == r + 1) & (rfm['F'] == f + 1)]['M']
+            if not filtered_data.empty:
+                y = filtered_data.value_counts().sort_index()
+                x = y.index
+                color = None
+                for c, coords in color_mapping.items():
+                    if (f, r) in coords:
+                        color = c
+                        break
+                fig.add_trace(go.Bar(x=x, y=y, marker_color=color, showlegend=False),
+                              row=5 - f, col=r + 1)
 
-    legend_function([(3, 0), (3, 1), (4, 0), (4, 1)], '#83c9ff')
-    legend_function([(1, 0), (1, 1), (2, 0), (2, 1)], '#29b09d')
-    legend_function([(0, 0), (0, 1)], '#ff8700')
-    legend_function([(4, 2), (3, 2)], '#7defa1')
-    legend_function([(2, 2)], '#757d79')
-    legend_function([(0, 2), (0, 3), (1, 2), (1, 3)], '#0068c9')
-    legend_function([(4, 3)], '#ff2b2b')
-    legend_function([(2, 3), (3, 3), (2, 4), (3, 4)], '#904cd9')
-    legend_function([(4, 4)], '#ffabab')
-    legend_function([(0, 4), (1, 4)], '#ffd16a')
+    for color, name in legend:
+        fig.add_trace(go.Bar(x=[None], y=[None], marker_color=color, showlegend=True, name=name))
 
-    legend_handles = [
-        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10, label=label)
-        for color, label in [('#83c9ff', 'Hibernating'), ('#29b09d', 'At risk'), ('#ff8700', 'Can\'t lose them'),
-                             ('#7defa1', 'About to sleep'), ('#757d79', 'Need attention'),
-                             ('#0068c9', 'Loyal customers'),
-                             ('#ff2b2b', 'Promising'), ('#904cd9', 'Potential loyalists'), ('#ffabab', 'New customers'),
-                             ('#ffd16a', 'Champions')]]
-
-    fig.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(1.1, 1.05))
+    fig.update_layout(title="RFM Treemap")
     st.write(fig)
 
     colors = {
