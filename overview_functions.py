@@ -15,58 +15,57 @@ def show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_gr
 
 
 def customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date):
-    customer_id = st.selectbox('Customers',
+    customer_id = st.selectbox('List of Customers',
                                (overview_data['Customer_ID'].astype(str) + ' - ' + overview_data['Customer_name']))
     customer_id = int(customer_id.split(' - ')[0])
     mean_cltv = overview_data['CLTV'].mean()
     overview_data = overview_data[overview_data['Customer_ID'] == customer_id]
 
-    col1, col2, col3 = st.columns(3)
+    st.divider()
 
+    col1, col2, col3 = st.columns(3)
     col1.write('***RFM clusters***')
-    col1.metric('ML cluster', 'Cluster ' + str(overview_data['Cluster RFM'].values[0]))
+    col1.metric('ML cluster', str(overview_data['Cluster RFM'].values[0]))
     col1.metric('Segment 1', str(overview_data['Segment 1'].values[0]))
     col1.metric('Segment 2', str(overview_data['Segment 2'].values[0]))
 
     col2.write('***MBA clusters***')
-    col2.metric('Product cluster', 'Cluster ' + str(overview_data['Product cluster MBA'].values[0]))
-    col2.metric('Category cluster', 'Cluster ' + str(overview_data['Category cluster MBA'].values[0]))
+    col2.metric('Product cluster', str(overview_data['Product cluster MBA'].values[0]))
+    col2.metric('Category cluster', str(overview_data['Category cluster MBA'].values[0]))
 
-    col3.write('***Lifetime value***')
-    col3.metric('Customer LTV', str(round(overview_data['CLTV'].values[0], 2)),
+    col3.write('***KPIs***')
+    col3.metric('Lifetime Value (€)', str(round(overview_data['CLTV'].values[0], 2)),
                 str(round((overview_data['CLTV'].values[0] - mean_cltv) / mean_cltv * 100, 2)) + ' %')
-
-    st.subheader('Timeline of Sales and Orders')
+    col3.metric('Longevity (days)', str(overview_data['Age'].values[0]))
 
     show_timelines(directory, snapshot_start_date, snapshot_end_date, customer_id)
 
-    st.subheader('Customer Location')
     get_customer_location(address, customer_id)
 
     return
 
 
 def cluster_overview_function(address, overview_data):
-    global_mean_cltv = overview_data['CLTV'].mean()
-
     col1, col2 = st.columns(2)
     column_names = ['Cluster RFM', 'Segment 1', 'Segment 2', 'Product cluster MBA', 'Category cluster MBA']
     cluster_type = col1.selectbox('Cluster type', column_names)
     cluster_ids = overview_data[cluster_type].sort_values(ascending=True).unique()
     cluster_id = col2.selectbox('Cluster', cluster_ids)
 
+    global_mean_cltv = overview_data['CLTV'].mean()
+    global_mean_age = overview_data['Age'].mean()
     overview_data = overview_data[overview_data[cluster_type] == cluster_id]
-
-    st.subheader('Cluster Location')
-    customer_ids = overview_data[overview_data[cluster_type] == cluster_id]['Customer_ID']
-    get_cluster_location(address, customer_ids)
-
-    st.subheader("Quick recap", divider='grey')
-    col1, col2 = st.columns(2)
-    col1.write(f"- **Customers**: {len(overview_data)}")
     local_mean_cltv = overview_data['CLTV'].mean()
-    col2.write(f"- **Average CLTV**: {round(local_mean_cltv, 2)} "
-               f" ({str(round((local_mean_cltv - global_mean_cltv) / global_mean_cltv * 100, 2)) + ' %'})")
+    local_mean_age = overview_data['Age'].mean()
+
+    st.divider()
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric('Customers', len(overview_data))
+    col2.metric('Average CLTV', round(local_mean_cltv, 2),
+                str(round((local_mean_cltv - global_mean_cltv) / global_mean_cltv * 100, 2)) + ' %')
+    col3.metric('Average Longevity', round(local_mean_age, 2),
+                str(round((local_mean_age - global_mean_age) / global_mean_age * 100, 2)) + ' %')
     for column in column_names:
         unique_values = overview_data[column].unique()
 
@@ -82,7 +81,10 @@ def cluster_overview_function(address, overview_data):
         fig.update_layout(title=f'Distribution of Clusters for {column}')
         st.plotly_chart(fig)
 
-    cluster_name = st.text_input('Name this cluster', '')
+    customer_ids = overview_data[overview_data[cluster_type] == cluster_id]['Customer_ID']
+    get_cluster_location(address, customer_ids)
+
+    return
 
     return cluster_name
 
@@ -94,10 +96,20 @@ def overview_main_function(address, overview_data, ml_clusters, segment_1_cluste
         ['Customer overview', 'Cluster overview', 'Download data'])
 
     with customer_overview_tab:
+        st.subheader(f'Customer Overview', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
         customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date)
         show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df)
 
     with cluster_overview_tab:
+        st.subheader('Cluster Overview', divider='grey')
+        st.info(f'Company: :blue[{directory}]' +
+                f'\n\nData type: :blue[{sales_filter}]' +
+                f'\n\nCustomer type: :blue[{customer_type}]' +
+                f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
         cluster_overview_function(address, overview_data)
         show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df)
 

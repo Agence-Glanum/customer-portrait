@@ -3,10 +3,10 @@ import pandas as pd
 import streamlit as st
 import geopandas as gpd
 import plotly.express as px
-
 from utils.data_viz import show_plots
 
 
+@st.cache_data
 def compute_kpis(invoices, orders, customers, categories, products, cltv_df):
     col1, col2, col3, col4 = st.columns(4)
 
@@ -15,11 +15,10 @@ def compute_kpis(invoices, orders, customers, categories, products, cltv_df):
     col3.metric('Products Count', str(len(products)))
     col4.metric('Lifetime Value', str(round(cltv_df['CLTV'].mean(), 2)) + '€')
 
-    show_plots(invoices, orders)
-
-    return
+    return show_plots(invoices, orders)
 
 
+@st.cache_data
 def compute_lifetime_value(df, df_lines, sales_filter):
     df_final = df.merge(df_lines, left_on=sales_filter + '_ID', right_on=sales_filter + '_ID')
 
@@ -44,6 +43,7 @@ def compute_lifetime_value(df, df_lines, sales_filter):
     return cltv_df
 
 
+@st.cache_data
 def get_customers_heatmap(address):
     with open('./utils/Geo/GlobalMap/countries.json') as c:
         countries_data = json.load(c)
@@ -112,6 +112,7 @@ def get_customers_heatmap(address):
     return fig
 
 
+@st.cache_data
 def get_customer_location(address, customer_id):
     corsica = pd.read_csv('utils/Geo/base-officielle-codes-postaux.csv')
 
@@ -148,7 +149,7 @@ def get_customer_location(address, customer_id):
                                           zoom=3.5, center={'lat': 46.6031, 'lon': 1.8883},
                                           opacity=0.8)
         france_map.update_layout(title='Customer Location')
-        st.write(france_map)
+        return st.write(france_map)
 
     else:
         geojson_world = './utils/Geo/curiexplore-pays.geojson'
@@ -165,11 +166,10 @@ def get_customer_location(address, customer_id):
                                          zoom=1, center={'lat': 46.6031, 'lon': 1.8883},
                                          opacity=0.8)
         world_map.update_layout(title='Customer Location')
-        st.write(world_map)
-
-    return
+        return st.write(world_map)
 
 
+@st.cache_data
 def get_cluster_location(address, customer_ids):
     corsica = pd.read_csv('utils/Geo/base-officielle-codes-postaux.csv')
 
@@ -227,4 +227,5 @@ def get_cluster_location(address, customer_ids):
     world_map.update_layout(title='Cluster Location worldwide')
     if not customer_zips[customer_zips['Country'] != 'FR'].empty:
         st.write(world_map)
-    return
+
+    return france_map, world_map

@@ -2,6 +2,7 @@ import streamlit as st
 import plotly.express as px
 
 
+@st.cache_data
 def show_eda(df_sales, df_lines, products, categories, sales_filter):
     df = df_sales.merge(df_lines, on=sales_filter + '_ID')
     new_df = df.groupby(sales_filter + '_ID').agg(

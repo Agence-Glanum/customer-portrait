@@ -1,6 +1,7 @@
 import streamlit as st
 
 
+@st.cache_data
 def recommend_product(df, product):
     df.sort_values('lift', ascending=False, inplace=True)
     recommendation_list = []
@@ -13,6 +14,7 @@ def recommend_product(df, product):
         return 'No recommendation available'
 
 
+@st.cache_data
 def recommend_category(df, category):
     df.sort_values('lift', ascending=False, inplace=True)
     recommendation_list = []

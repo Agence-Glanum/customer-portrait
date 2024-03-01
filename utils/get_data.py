@@ -1,7 +1,9 @@
 import datetime
 import pandas as pd
+import streamlit as st
 
 
+@st.cache_data
 def get_data_from_csv(directory):
     path = './data/' + directory
     address = pd.read_csv(f'{path}/Addresses.csv')
@@ -15,6 +17,7 @@ def get_data_from_csv(directory):
     return address, categories, customer, invoices, invoices_lines, orders, orders_lines, products
 
 
+@st.cache_data
 def transform_data(directory):
     address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = get_data_from_csv(
         directory)
@@ -25,6 +28,7 @@ def transform_data(directory):
     return address, categories, customer, invoices, invoices_lines, orders, orders_lines, products
 
 
+@st.cache_data
 def get_dates(directory):
     address, categories, customer, invoices, invoices_lines, orders, orders_lines, products = transform_data(directory)
 
@@ -34,6 +38,7 @@ def get_dates(directory):
     return DATE_MIN, DATE_MAX
 
 
+@st.cache_data
 def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_date, directory):
     addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(
         directory)
