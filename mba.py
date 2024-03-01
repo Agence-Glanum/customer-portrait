@@ -6,8 +6,14 @@ from next_product_prediction import next_prod_pred_main_function
 from product_affinity_functions import prod_aff_main_function
 
 
+@st.cache_data
 def show_mba(product_clusters, category_clusters, apriori_rules_products, apriori_rules_categories):
     st.info('The product and category clusters are not the same !')
+
+    def format_proportion(row, mode):
+        formatted_values = [f"{item} ({proportion})" for item, proportion in
+                            zip(row[mode], row['proportion'])]
+        return ', '.join(formatted_values)
 
     product_melted_df = pd.melt(product_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
                                 var_name='product', value_name='spending')
@@ -17,6 +23,13 @@ def show_mba(product_clusters, category_clusters, apriori_rules_products, aprior
     product_grouped_df = product_melted_df.groupby(['Cluster MBA', 'product'])['proportion'].sum()
     product_grouped_df = product_grouped_df.reset_index()
     product_grouped_df['proportion'] = product_grouped_df['proportion'].map(lambda x: f"{x:.2%}")
+    product_grouped_df.set_index('Cluster MBA', inplace=True)
+    product_grouped_df = product_grouped_df.groupby('Cluster MBA').agg(lambda x: list(x))
+
+    product_grouped_df['Product'] = product_grouped_df.apply(format_proportion, axis=1, mode='product')
+
+    product_grouped_df = product_grouped_df.groupby('Cluster MBA')['Product'].apply(
+        lambda x: ', '.join(x)).reset_index()
     product_grouped_df.set_index('Cluster MBA', inplace=True)
 
     category_melted_df = pd.melt(category_clusters.reset_index(), id_vars=['Customer_ID', 'Cluster MBA'],
@@ -28,6 +41,13 @@ def show_mba(product_clusters, category_clusters, apriori_rules_products, aprior
     category_grouped_df = category_melted_df.groupby(['Cluster MBA', 'category'])['proportion'].sum()
     category_grouped_df = category_grouped_df.reset_index()
     category_grouped_df['proportion'] = category_grouped_df['proportion'].map(lambda x: f"{x:.2%}")
+    category_grouped_df.set_index('Cluster MBA', inplace=True)
+    category_grouped_df = category_grouped_df.groupby('Cluster MBA').agg(lambda x: list(x))
+
+    category_grouped_df['Category'] = category_grouped_df.apply(format_proportion, axis=1, mode='category')
+
+    category_grouped_df = category_grouped_df.groupby('Cluster MBA')['Category'].apply(
+        lambda x: ', '.join(x)).reset_index()
     category_grouped_df.set_index('Cluster MBA', inplace=True)
 
     with st.expander('Product Clusters'):
@@ -68,17 +88,18 @@ def mba_main_function(df_sales, df_lines, products, categories, snapshot_start_d
                 f'\n\nData type: :blue[{sales_filter}]' +
                 f'\n\nCustomer type: :blue[{customer_type}]' +
                 f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
+        data_filter = st.radio('Analyze the Data based on', ['Quantity', 'Total_price'], horizontal=True)
         product_clusters, category_clusters = prod_aff_main_function(df_sales, df_lines, categories, products,
-                                                                     sales_filter)
+                                                                     sales_filter, data_filter)
     with most_freq_tab:
         st.header(f'Most Frequent Pattern', divider='grey')
         st.info(f'Company: :blue[{directory}]' +
                 f'\n\nData type: :blue[{sales_filter}]' +
                 f'\n\nCustomer type: :blue[{customer_type}]' +
                 f'\n\nDate range: :blue[{snapshot_start_date}] to :blue[{snapshot_end_date}]', icon='ℹ️')
-        apriori_rules_products, apriori_rules_categories = most_frequent_pattern_main_function(
-            df_lines, products, categories,
-            sales_filter)
+        apriori_rules_products, apriori_rules_categories = most_frequent_pattern_main_function(df_lines, products,
+                                                                                               categories,
+                                                                                               sales_filter)
     with product_pred_tab:
         st.header(f'Recommendations', divider='grey')
         st.info(f'Company: :blue[{directory}]' +

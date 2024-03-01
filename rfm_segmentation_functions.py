@@ -2,7 +2,6 @@ import pandas as pd
 from scipy import stats
 import numpy as np
 import streamlit as st
-import matplotlib.pyplot as plt
 import plotly.express as px
 from plotly.subplots import make_subplots
 from sklearn.metrics import silhouette_score
@@ -65,7 +64,7 @@ def show_rfm_distribution(rfm):
     fig.update_layout(bargap=0.2, title='Boxplot for RFM Values')
     st.write(fig)
 
-    return
+    return fig
 
 
 def show_rfm_scatter_3d(rfm):
@@ -76,7 +75,7 @@ def show_rfm_scatter_3d(rfm):
         zaxis_title='Monetary'), title='3D scatter of RFM Values')
     st.write(fig)
 
-    return
+    return fig
 
 
 def clean_data(rfm):
@@ -104,8 +103,9 @@ def elbow_method(scaled_features):
         SSE.append(kmeans.inertia_)
 
     frame = pd.DataFrame({'Cluster': range(1, 12), 'SSE': SSE})
-    st.write(px.line(x=frame['Cluster'], y=frame['SSE']))
-    return
+    fig = px.line(x=frame['Cluster'], y=frame['SSE'])
+    st.write(fig)
+    return fig
 
 
 def customer_segmentation_model(scaled_features, nb_clusters):
@@ -142,13 +142,12 @@ def show_rfm_clusters(avg_df, scaled_features):
     fig = px.bar(x=bar_data.index, y=bar_data.values, color=bar_data.values, title='Number of Customer in each Cluster')
     fig.update_layout(xaxis_title='Clusters', yaxis_title='Count')
     st.write(fig)
-    return
+    return fig
 
 
 def show_customer_segment_distribution(rfm):
     st.info('This RFM Segmentation is based on this PhD thesis (2021): '
-            'https://dergipark.org.tr/tr/download/article-file/2343280',
-            icon='ℹ️')
+            'https://dergipark.org.tr/tr/download/article-file/2343280', icon='ℹ️')
 
     rfm['RFM score'] = rfm['R'].map(str) + rfm['F'].map(str) + rfm['M'].map(str)
     rfm['RFM_count'] = rfm.groupby(['R', 'F', 'M'])['R'].transform('count')
@@ -186,14 +185,14 @@ def show_customer_segment_distribution(rfm):
         'Other': 'gray'
     }
 
-    fig = px.scatter_3d(rfm, x='R', y='F', z='M', color='Segment 1', size='RFM_count',
-                        color_discrete_map=colors_palette, opacity=1, size_max=40)
+    fig_scatter = px.scatter_3d(rfm, x='R', y='F', z='M', color='Segment 1', size='RFM_count',
+                                color_discrete_map=colors_palette, opacity=1, size_max=40)
 
-    fig.update_layout(scene=dict(
+    fig_scatter.update_layout(scene=dict(
         xaxis_title='Recency',
         yaxis_title='Frequency',
         zaxis_title='Monetary'), title='3D scatter of RFM Segments')
-    st.write(fig)
+    st.write(fig_scatter)
 
     segments_counts = rfm['Segment 1'].value_counts().sort_values(ascending=False)
     fig_pie = px.pie(segments_counts, values=segments_counts.values, names=segments_counts.index,
@@ -201,7 +200,7 @@ def show_customer_segment_distribution(rfm):
     fig_pie.update_layout(title='Proportion of RFM Segments')
     st.write(fig_pie)
 
-    return
+    return fig_scatter, fig_pie
 
 
 def show_customer_segment_distribution_rfm(rfm):
@@ -225,8 +224,8 @@ def show_customer_segment_distribution_rfm(rfm):
         '#ffd16a': [(4, 4), (3, 4)]
     }
 
-    fig = make_subplots(rows=5, cols=5, shared_yaxes=True,
-                        subplot_titles=[f"F{i}, R{j}" for i in range(5, 0, -1) for j in range(1, 6)])
+    fig_treemap = make_subplots(rows=5, cols=5, shared_yaxes=True,
+                                subplot_titles=[f"F{i}, R{j}" for i in range(5, 0, -1) for j in range(1, 6)])
 
     for f in range(5):
         for r in range(5):
@@ -239,14 +238,14 @@ def show_customer_segment_distribution_rfm(rfm):
                     if (f, r) in coords:
                         color = c
                         break
-                fig.add_trace(go.Bar(x=x, y=y, marker_color=color, showlegend=False),
-                              row=5 - f, col=r + 1)
+                fig_treemap.add_trace(go.Bar(x=x, y=y, marker_color=color, showlegend=False),
+                                      row=5 - f, col=r + 1)
 
     for color, name in legend:
-        fig.add_trace(go.Bar(x=[None], y=[None], marker_color=color, showlegend=True, name=name))
+        fig_treemap.add_trace(go.Bar(x=[None], y=[None], marker_color=color, showlegend=True, name=name))
 
-    fig.update_layout(title="RFM Treemap")
-    st.write(fig)
+    fig_treemap.update_layout(title="RFM Treemap")
+    st.write(fig_treemap)
 
     colors = {
         'Hibernating': '#83c9ff',
@@ -279,17 +278,17 @@ def show_customer_segment_distribution_rfm(rfm):
 
     segments_counts = rfm['Segment 2'].value_counts().sort_values(ascending=False)
 
-    fig = px.pie(
+    fig_pie = px.pie(
         segments_counts,
         values=segments_counts.values,
         names=segments_counts.index,
         color=segments_counts.index,
         color_discrete_map=colors
     )
-    fig.update_layout(title='Proportion of RFM Segments')
-    st.write(fig)
+    fig_pie.update_layout(title='Proportion of RFM Segments')
+    st.write(fig_pie)
 
-    return
+    return fig_treemap, fig_pie
 
 
 def segment_1_details(df):
@@ -304,7 +303,7 @@ def segment_1_details(df):
     data = pd.DataFrame(data, columns=['Segment 1', 'Description'])
     data = pd.merge(data, df, on='Segment 1').set_index('Segment 1')
     st.dataframe(data)
-    return
+    return data
 
 
 def segment_2_details(df):
@@ -345,9 +344,10 @@ def segment_2_details(df):
     data = pd.DataFrame(data, columns=['Segment 2', 'Description', 'Strategies'])
     data = pd.merge(data, df, on='Segment 2').set_index('Segment 2')
     st.dataframe(data)
-    return
+    return data
 
 
+@st.cache_data(experimental_allow_widgets=True)
 def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_start_date, sales_filter, customer_type):
     rfm = compute_rfm_segments(df, snapshot_end_date, sales_filter)
 
@@ -398,7 +398,7 @@ def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_star
             features = rfm[rfm['Customer_ID'] == customer_id][col_names]
             scaled_features = scaler.transform(features.values)
             customer_cluster = kmeans.predict(scaled_features)
-            customer_cluster_list.append(customer_cluster[0])
+            customer_cluster_list.append('Cluster ' + str(customer_cluster[0]))
         rfm['Cluster RFM'] = customer_cluster_list
         rfm = rfm.merge(customers[['Customer_ID', 'Customer_name']], on='Customer_ID')
         rfm['Customer_ID'] = rfm['Customer_ID'].astype(int)

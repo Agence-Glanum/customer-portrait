@@ -14,6 +14,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import make_scorer
 
 
+@st.cache_data
 def clean_data(categories, products, df_sales, df_lines, data_filter, sales_filter):
     df_sales.rename(columns={'Total_price': 'Final_price'}, inplace=True)
     df = df_sales.merge(df_lines, on=sales_filter + '_ID').merge(products, on='Product_ID')
@@ -32,6 +33,7 @@ def clean_data(categories, products, df_sales, df_lines, data_filter, sales_filt
     return df, df_cat
 
 
+@st.cache_resource
 def elbow_method(scaled_features):
     SSE = []
     for cluster in range(1, 12):
@@ -40,27 +42,26 @@ def elbow_method(scaled_features):
         SSE.append(kmeans.inertia_)
 
     frame = pd.DataFrame({'Cluster': range(1, 12), 'SSE': SSE})
-    st.write(px.line(x=frame['Cluster'], y=frame['SSE']))
-    return
-
-
-def show_umap(product_features):
-    ump_2d = umap.UMAP(n_components=2, init='random')
-    umap_2d_data = ump_2d.fit_transform(product_features)
-    fig = px.scatter(x=umap_2d_data[:, 0], y=umap_2d_data[:, 1],
-                     title='2D UMAP Basket Clusters', color=product_features['Cluster MBA'].astype(str))
+    fig = px.line(x=frame['Cluster'], y=frame['SSE'])
     st.write(fig)
-
-    ump_3d = umap.UMAP(n_components=3, init='random')
-    umap_3d_data = ump_3d.fit_transform(product_features)
-    fig = px.scatter_3d(x=umap_3d_data[:, 0], y=umap_3d_data[:, 1], z=umap_3d_data[:, 2],
-                        title='3D UMAP Basket Clusters', color=product_features['Cluster MBA'].astype(str))
-    st.write(fig)
-    return
+    return fig
 
 
-def show_radar_plot(categorie_features):
-    avg_df = categorie_features.groupby(['Cluster MBA']).mean()
+@st.cache_data
+def show_umap(umap_2d_data, umap_3d_data, product_clusters):
+    fig_2d = px.scatter(x=umap_2d_data[:, 0], y=umap_2d_data[:, 1],
+                        title='2D UMAP Basket Clusters', color=product_clusters['Cluster MBA'].astype(str))
+    st.write(fig_2d)
+
+    fig_3d = px.scatter_3d(x=umap_3d_data[:, 0], y=umap_3d_data[:, 1], z=umap_3d_data[:, 2],
+                           title='3D UMAP Basket Clusters', color=product_clusters['Cluster MBA'].astype(str))
+    st.write(fig_3d)
+    return fig_2d, fig_3d
+
+
+@st.cache_data
+def show_radar_plot(categorie_clusters):
+    avg_df = categorie_clusters.groupby(['Cluster MBA']).mean()
     fig = go.Figure()
     for i in range(len(avg_df)):
         fig.add_trace(go.Scatterpolar(
@@ -74,37 +75,18 @@ def show_radar_plot(categorie_features):
     return fig
 
 
+@st.cache_resource
 def kmeans_model(features, nb_clusters):
     elbow_method(features)
     model = KMeans(n_clusters=nb_clusters, init='k-means++', n_init='auto')
     model.fit(features.values)
     st.success('Silhouette score : ' + str(round(silhouette_score(features, model.labels_, metric='euclidean'), 2)))
-    pred = model.predict(features)
-    features['Cluster MBA'] = pred
+    predictions = model.predict(features)
+    features['Cluster MBA'] = ['Cluster ' + str(pred) for pred in predictions]
     return features
 
 
-def hdbscan_model(features):
-    hdb = hdbscan.HDBSCAN(gen_min_span_tree=True).fit(features.values)
-    param_dist = {'min_cluster_size': [10, 25, 50, 75, 100, 150, 200]}
-    validity_scorer = make_scorer(hdbscan.validity.validity_index, greater_is_better=True)
-    n_iter_search = 20
-    random_search = RandomizedSearchCV(hdb, param_distributions=param_dist,
-                                       n_iter=n_iter_search,
-                                       scoring=validity_scorer,
-                                       random_state=42)
-    random_search.fit(features.values)
-    st.write('Hyperparameter Tuning (Best Parameters) : ')
-    st.write(f"Min cluster size : {random_search.best_params_['min_cluster_size']}")
-    st.write(f'DBCV score : {round(random_search.best_estimator_.relative_validity_, 2)}')
-
-    model = hdbscan.HDBSCAN(min_cluster_size=random_search.best_params_['min_cluster_size'])
-    pred = model.fit_predict(features)
-    st.write(f'=> Number of optimal clusters : {len(np.unique(model.labels_))}')
-    features['Cluster MBA'] = pred
-    return features
-
-
+@st.cache_resource
 def agglomerative_model(features, nb_clusters):
     Z = linkage(features, 'ward')
     fig, ax = plt.subplots()
@@ -113,38 +95,37 @@ def agglomerative_model(features, nb_clusters):
     st.pyplot(fig)
 
     model = AgglomerativeClustering(n_clusters=nb_clusters, compute_distances=True)
-    pred = model.fit_predict(features)
-    features['Cluster MBA'] = pred
+    predictions = model.fit_predict(features)
+    features['Cluster MBA'] = ['Cluster ' + str(pred) for pred in predictions]
     return features
 
 
-def prod_aff_main_function(df_sales, df_lines, categories, products, sales_filter):
-    data_filter = st.radio('Analyze the Data based on', ['Quantity', 'Total_price'], horizontal=True)
+def prod_aff_main_function(df_sales, df_lines, categories, products, sales_filter, data_filter):
     product_features, category_features = clean_data(categories, products, df_sales, df_lines, data_filter,
                                                      sales_filter)
+    ump_2d = umap.UMAP(n_components=2, init='random')
+    umap_2d_data = ump_2d.fit_transform(product_features)
+    ump_3d = umap.UMAP(n_components=3, init='random')
+    umap_3d_data = ump_3d.fit_transform(product_features)
 
     with st.expander('Product Clusters'):
         product_model_name = st.radio('Choose the model for Product Clustering',
-                                      ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
+                                      ['Kmeans', 'Agglomerative Clustering'])
         if product_model_name == 'Kmeans':
             nb_clusters_product = st.slider('Number of Product Clusters', 2, 11, 4)
             product_clusters = kmeans_model(product_features, nb_clusters_product)
-        elif product_model_name == 'HDBScan':
-            product_clusters = hdbscan_model(product_features)
         else:
             nb_clusters_product = st.slider('How many Product Clusters do you want ?', 2, 11, 4)
             product_clusters = agglomerative_model(product_features, nb_clusters_product)
 
-        show_umap(product_clusters)
+        show_umap(umap_2d_data, umap_3d_data, product_clusters)
 
     with st.expander('Category Clusters'):
         category_model_name = st.radio('Choose the model for Category Clustering',
-                                       ['Kmeans', 'HDBScan', 'Agglomerative Clustering'])
+                                       ['Kmeans', 'Agglomerative Clustering'])
         if category_model_name == 'Kmeans':
             nb_clusters_category = st.slider('Number of Category Clusters', 2, 11, 4)
             category_clusters = kmeans_model(category_features, nb_clusters_category)
-        elif category_model_name == 'HDBScan':
-            category_clusters = hdbscan_model(category_features)
         else:
             nb_clusters_category = st.slider('How many Category Clusters do you want ?', 2, 11, 4)
             category_clusters = agglomerative_model(category_features, nb_clusters_category)

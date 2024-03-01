@@ -5,6 +5,7 @@ from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules, fpgrowth
 
 
+@st.cache_data
 def clean_data(df_lines, products, categories, sales_filter, mode):
     data = df_lines.merge(products, on='Product_ID').merge(categories, on='Category_ID').groupby(
         sales_filter + '_ID')[mode + '_name'].apply(lambda x: list(set(x))).to_frame()
@@ -17,6 +18,7 @@ def clean_data(df_lines, products, categories, sales_filter, mode):
     return df
 
 
+@st.cache_resource
 def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0.01):
     apriori_res = apriori(df, min_support=min_support, use_colnames=True).sort_values(by="support", ascending=False)
     bar_data = apriori_res[:5].copy()
@@ -41,6 +43,7 @@ def apriori_approach(df, min_support=0.001, metric="confidence", min_threshold=0
     return apriori_res, rules
 
 
+@st.cache_resource
 def fpgrowth_approach(df, min_support=0.001, metric='lift', min_threshold=0.01):
     fpgrowth_res = fpgrowth(df, min_support=min_support, use_colnames=True).sort_values(by="support", ascending=False)
     bar_data = fpgrowth_res[:5].copy()
