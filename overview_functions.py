@@ -6,6 +6,7 @@ from utils.data_viz import show_timelines
 from utils.utility_functions import get_customer_location, get_cluster_location
 
 
+@st.cache_data
 def show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df):
     with st.expander('Details about the clusters'):
         st.info('The RFM values represent the average value within each cluster.')
@@ -14,6 +15,7 @@ def show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_gr
         st.dataframe(segment_2_clusters)
         st.dataframe(product_grouped_df)
         st.dataframe(category_grouped_df)
+    return
 
 
 def customer_overview_function(address, overview_data, directory, snapshot_start_date, snapshot_end_date):
@@ -186,6 +188,7 @@ def freeze_and_send_data(overview_data, admin, ml_clusters, segment_1_clusters, 
             st.subheader('For categories', divider='grey')
             st.dataframe(category_recommendation)
         show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df)
+    return
 
 
 def overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,

@@ -1,5 +1,3 @@
-import hdbscan
-import numpy as np
 import pandas as pd
 import streamlit as st
 import umap.umap_ as umap
@@ -10,8 +8,6 @@ from sklearn.metrics import silhouette_score
 from scipy.cluster.hierarchy import dendrogram, linkage
 from matplotlib import pyplot as plt
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import make_scorer
 
 
 @st.cache_data
@@ -100,13 +96,19 @@ def agglomerative_model(features, nb_clusters):
     return features
 
 
-def prod_aff_main_function(df_sales, df_lines, categories, products, sales_filter, data_filter):
-    product_features, category_features = clean_data(categories, products, df_sales, df_lines, data_filter,
-                                                     sales_filter)
+@st.cache_data
+def generate_umap(product_features):
     ump_2d = umap.UMAP(n_components=2, init='random')
     umap_2d_data = ump_2d.fit_transform(product_features)
     ump_3d = umap.UMAP(n_components=3, init='random')
     umap_3d_data = ump_3d.fit_transform(product_features)
+    return umap_2d_data, umap_3d_data
+
+
+def prod_aff_main_function(df_sales, df_lines, categories, products, sales_filter, data_filter):
+    product_features, category_features = clean_data(categories, products, df_sales, df_lines, data_filter,
+                                                     sales_filter)
+    umap_2d_data, umap_3d_data = generate_umap(product_features)
 
     with st.expander('Product Clusters'):
         product_model_name = st.radio('Choose the model for Product Clustering',

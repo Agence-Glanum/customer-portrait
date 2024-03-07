@@ -13,9 +13,9 @@ def geodemographic_profiling_main_function(address, directory, sales_filter, cus
     address_type = st.radio('Address type', ['Invoice', 'Delivery'], horizontal=True)
 
     if address_type == 'Invoice':
-        address = address[(address['Address_type'] == 'invoice') | (address['Address_type'] == 'both')]
+        address = address[(address['Address_type'] == 'INVOICE') | (address['Address_type'] == 'BOTH')]
     elif address_type == 'Delivery':
-        address = address[(address['Address_type'] == 'delivery') | (address['Address_type'] == 'both')]
+        address = address[(address['Address_type'] == 'DELIVERY') | (address['Address_type'] == 'BOTH')]
     try:
         get_customers_heatmap(address)
     except AttributeError:

@@ -69,4 +69,23 @@ def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_dat
     categories = categories[categories['Category_ID'].isin(products['Category_ID'])]
     addresses = addresses[addresses['Customer_ID'].isin(customers['Customer_ID'])]
 
+    addresses = addresses.apply(lambda x: x.astype(str).str.upper())
+    addresses = addresses.drop_duplicates(
+        subset=['Customer_ID', 'Address_1', 'Address_2', 'Zip_code', 'City', 'Country', 'Address_type'])
+    addresses.dropna(subset=['Address_type'], inplace=True)
+
+    invoice_addresses = pd.merge(invoices[['Invoice_address_ID', 'Invoice_date']],
+                                 addresses[addresses['Address_type'] == 'invoice'],
+                                 left_on='Invoice_address_ID',
+                                 right_on='Address_ID', how='right')
+
+    invoice_addresses['Rank'] = invoice_addresses.groupby('Customer_ID')['Invoice_date'].transform(
+        lambda x: x.rank(method='first', ascending=False))
+    invoice_addresses = invoice_addresses[invoice_addresses['Rank'] == 1].drop(columns=['Rank'])
+
+    other_addresses = addresses[addresses['Address_type'] != 'invoice']
+
+    addresses = pd.concat([invoice_addresses, other_addresses])
+    addresses.drop(['Invoice_address_ID', 'Invoice_date'], axis=1)
+
     return addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products
