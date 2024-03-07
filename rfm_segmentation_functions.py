@@ -347,7 +347,6 @@ def segment_2_details(df):
     return data
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def rfm_main_function(df, snapshot_end_date, customers, directory, snapshot_start_date, sales_filter, customer_type):
     rfm = compute_rfm_segments(df, snapshot_end_date, sales_filter)
 
