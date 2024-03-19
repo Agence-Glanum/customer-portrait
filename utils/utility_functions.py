@@ -8,12 +8,13 @@ from utils.data_viz import show_plots
 
 @st.cache_data
 def compute_kpis(invoices, orders, customers, categories, products, cltv_df):
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric('Customers', customers['Customer_ID'].nunique())
     col2.metric('Categories Count', str(len(categories)))
     col3.metric('Products Count', str(len(products)))
-    col4.metric('Lifetime Value', str(round(cltv_df['CLTV'].mean(), 2)) + '€')
+    col4.metric('Lifetime Value (€)', str(round(cltv_df['CLTV'].mean(), 2)))
+    col5.metric('Lifetime Value (days)', str(round(cltv_df['Age'].mean(), 2)))
 
     return show_plots(invoices, orders)
 
