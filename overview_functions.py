@@ -92,7 +92,8 @@ def cluster_overview_function(address, overview_data):
 
 
 def freeze_and_send_data(overview_data, admin, ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df,
-                         category_grouped_df, product_recommendation, category_recommendation, directory, sales_filter,
+                         category_grouped_df, product_recommendation, category_recommendation, recommendations_ubcf,
+                         recommendations_ubcfc, recommendations_ibcf, recommendations_ibcfc, directory, sales_filter,
                          customer_type, snapshot_start_date, snapshot_end_date):
     if admin:
         with st.form("checkpoint_form"):
@@ -102,10 +103,21 @@ def freeze_and_send_data(overview_data, admin, ml_clusters, segment_1_clusters, 
             with st.expander('Customers data'):
                 st.dataframe(overview_data)
             with st.expander('Recommendation'):
-                st.subheader('For products', divider='grey')
+                st.subheader('Associative Rule Learning', divider='grey')
+                st.caption('For Products')
                 st.dataframe(product_recommendation)
-                st.subheader('For categories', divider='grey')
+                st.caption('For Categories')
                 st.dataframe(category_recommendation)
+                st.subheader('Collaborative Filtering - Customer based', divider='grey')
+                st.caption('For Products')
+                st.dataframe(recommendations_ubcf)
+                st.caption('For Categories')
+                st.dataframe(recommendations_ubcfc)
+                st.subheader('Collaborative Filtering - Item based', divider='grey')
+                st.caption('For Products')
+                st.dataframe(recommendations_ibcf)
+                st.caption('For Categories')
+                st.dataframe(recommendations_ibcfc)
             with st.expander('Details about the clusters'):
                 st.info('You can edit the clusters names !', icon='🚨')
                 st.caption('The RFM values represent the average value within each cluster.')
@@ -174,6 +186,18 @@ def freeze_and_send_data(overview_data, admin, ml_clusters, segment_1_clusters, 
                 category_grouped_df.to_csv(
                     './Results/' + directory + '/category_grouped_df_' + sales_filter + '_' + customer_type + '_' + str(
                         snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ubcf.to_csv(
+                    './Results/' + directory + '/recommendations_ubcf' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ubcfc.to_csv(
+                    './Results/' + directory + '/recommendations_ubcfc' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ibcf.to_csv(
+                    './Results/' + directory + '/recommendations_ibcf' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ibcfc.to_csv(
+                    './Results/' + directory + '/recommendations_ibcfc' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
 
                 if os.path.exists(file_path):
                     return st.toast('All the Data has been successfully sent !', icon="✅")
@@ -183,16 +207,28 @@ def freeze_and_send_data(overview_data, admin, ml_clusters, segment_1_clusters, 
         with st.expander('Customers data'):
             st.dataframe(overview_data)
         with st.expander('Recommendation'):
-            st.subheader('For products', divider='grey')
+            st.subheader('Associative Rule Learning', divider='grey')
+            st.caption('For Products')
             st.dataframe(product_recommendation)
-            st.subheader('For categories', divider='grey')
+            st.caption('For Categories')
             st.dataframe(category_recommendation)
+            st.subheader('Collaborative Filtering - Customer based', divider='grey')
+            st.caption('For Products')
+            st.dataframe(recommendations_ubcf)
+            st.caption('For Categories')
+            st.dataframe(recommendations_ubcfc)
+            st.subheader('Collaborative Filtering - Item based', divider='grey')
+            st.caption('For Products')
+            st.dataframe(recommendations_ibcf)
+            st.caption('For Categories')
+            st.dataframe(recommendations_ibcfc)
         show_details(ml_clusters, segment_1_clusters, segment_2_clusters, product_grouped_df, category_grouped_df)
     return
 
 
 def overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
                            product_grouped_df, category_grouped_df, product_recommendation, category_recommendation,
+                           recommendations_ubcf, recommendations_ubcfc, recommendations_ibcf, recommendations_ibcfc,
                            directory, snapshot_start_date, snapshot_end_date, admin, sales_filter, customer_type):
     customer_overview_tab, cluster_overview_tab, data_tab = st.tabs(
         ['Customer overview', 'Cluster overview', 'Download data'])
@@ -217,9 +253,8 @@ def overview_main_function(address, overview_data, ml_clusters, segment_1_cluste
 
     with data_tab:
         freeze_and_send_data(overview_data, admin, ml_clusters, segment_1_clusters, segment_2_clusters,
-                             product_grouped_df,
-                             category_grouped_df, product_recommendation, category_recommendation, directory,
-                             sales_filter,
-                             customer_type, snapshot_start_date, snapshot_end_date)
+                             product_grouped_df, category_grouped_df, product_recommendation, category_recommendation,
+                             recommendations_ubcf, recommendations_ubcfc, recommendations_ibcf, recommendations_ibcfc,
+                             directory, sales_filter, customer_type, snapshot_start_date, snapshot_end_date)
 
     return

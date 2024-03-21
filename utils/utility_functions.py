@@ -14,7 +14,7 @@ def compute_kpis(invoices, orders, customers, categories, products, cltv_df):
     col2.metric('Categories Count', str(len(categories)))
     col3.metric('Products Count', str(len(products)))
     col4.metric('Lifetime Value (€)', str(round(cltv_df['CLTV'].mean(), 2)))
-    col5.metric('Lifetime Value (days)', str(round(cltv_df['Age'].mean(), 2)))
+    col5.metric('Longevity (days)', str(round(cltv_df['Age'].mean(), 2)))
 
     return show_plots(invoices, orders)
 
@@ -92,22 +92,32 @@ def get_customers_heatmap(address):
     merged_df_dpts = pd.merge(df_gps, result, how='left', left_on='numero', right_on='Zip_code')
     merged_df_dpts_dropped = merged_df_dpts.drop('nomLong', axis=1)
 
-    merged_df_countries = pd.merge(df_countries_renamed, result, how='left', left_on='numero', right_on='Zip_code')
-    merged_df_countries_dropped = merged_df_countries.drop(columns=['numeric', 'alpha3'])
-    merged_df_countries_dropped = merged_df_countries_dropped.rename(columns={'country': 'nomShort'})
-    result = pd.concat([merged_df_countries_dropped, merged_df_dpts_dropped], ignore_index=True)
+    if not df_countries_renamed.empty:
+        merged_df_countries = pd.merge(df_countries_renamed, result, how='left', left_on='numero', right_on='Zip_code')
+        merged_df_countries_dropped = merged_df_countries.drop(columns=['numeric', 'alpha3'])
+        merged_df_countries_dropped = merged_df_countries_dropped.rename(columns={'country': 'nomShort'})
+        result = pd.concat([merged_df_countries_dropped, merged_df_dpts_dropped], ignore_index=True)
+        zoom = 1
+        center = 0
+    else:
+        result = merged_df_dpts_dropped
+        zoom = 5
+        center = {'lat': 46.6031, 'lon': 1.7394}
 
-    fig = px.density_mapbox(result,
+    fig = px.scatter_mapbox(result,
                             height=600,
                             lat='lat',
                             lon='lng',
-                            z='Count',
-                            color_continuous_scale='viridis',
-                            radius=10,
-                            center={'lat': 46.6031, 'lon': 1.7394},
-                            zoom=2,
-                            mapbox_style='carto-positron')
-    fig.update_layout(title='Heatmap of Customers')
+                            zoom=zoom,
+                            center=center,
+                            size=result['Count'],
+                            mapbox_style='carto-positron',
+                            size_max=50,
+                            hover_name='nomShort',
+                            )
+    fig.update_layout(title='Map of Customers')
+    fig.update_layout(margin={'r': 0, 't': 0, 'l': 30, 'b': 0})
+    fig.update_traces(marker=dict(opacity=0.5))
     st.write(fig)
 
     return fig
