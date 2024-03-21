@@ -39,22 +39,28 @@ def get_dates(directory):
 
 
 @st.cache_data
-def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_date, directory):
+def filter_data(client_type, sales_filter, snapshot_start_date, snapshot_end_date, directory, date_flag, client_flag):
     addresses, categories, customers, invoices, invoices_lines, orders, orders_lines, products = transform_data(
         directory)
 
     # Get Customers based on the filter
-    customers = customers[(customers['Customer_type'] == client_type)]
+    if client_flag:
+        customers = customers[(customers['Customer_type'] == client_type)]
 
     # Get Invoices and Orders within the Date Range
     start_date = datetime.datetime(snapshot_start_date.year, snapshot_start_date.month, snapshot_start_date.day)
     end_date = datetime.datetime(snapshot_end_date.year, snapshot_end_date.month, snapshot_end_date.day)
-    invoices = invoices[(invoices['Invoice_date'] >= start_date) &
-                        (invoices['Invoice_date'] <= end_date) &
-                        (invoices['Customer_ID'].isin(customers['Customer_ID']))]
-    orders = orders[(orders['Order_date'] >= start_date) &
-                    (orders['Order_date'] <= end_date) &
-                    (orders['Customer_ID'].isin(customers['Customer_ID']))]
+
+    if date_flag:
+        invoices = invoices[(invoices['Invoice_date'] >= start_date) &
+                            (invoices['Invoice_date'] <= end_date) &
+                            (invoices['Customer_ID'].isin(customers['Customer_ID']))]
+        orders = orders[(orders['Order_date'] >= start_date) &
+                        (orders['Order_date'] <= end_date) &
+                        (orders['Customer_ID'].isin(customers['Customer_ID']))]
+    else:
+        invoices = invoices[(invoices['Customer_ID'].isin(customers['Customer_ID']))]
+        orders = orders[(orders['Customer_ID'].isin(customers['Customer_ID']))]
 
     # Get All Data based on filters
     if sales_filter == 'Invoice':

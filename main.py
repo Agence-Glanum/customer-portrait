@@ -59,11 +59,12 @@ def get_filters():
 
 def data_main():
     directory, sales_filter, customer_type, snapshot_start_date, snapshot_end_date = get_filters()
-    address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(customer_type,
-                                                                                                           sales_filter,
-                                                                                                           snapshot_start_date,
-                                                                                                           snapshot_end_date,
-                                                                                                           directory)
+    address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(
+        customer_type,
+        sales_filter,
+        snapshot_start_date,
+        snapshot_end_date,
+        directory, True, True)
     home_tab, geo_tab, rfm_seg_tab, mba_tab, customer_tab = st.tabs(
         ['Home', 'Geodemographic profiling', 'RFM Segmentation', 'MBA', 'Overview'])
 
@@ -77,7 +78,8 @@ def data_main():
     if not df_sales.empty and not df_lines.empty:
         with home_tab:
             cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
-            home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type, snapshot_start_date, snapshot_end_date, directory)
+            home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type,
+                               snapshot_start_date, snapshot_end_date, directory)
 
         with geo_tab:
             geodemographic_profiling_main_function(address, directory, sales_filter, customer_type,
@@ -89,9 +91,24 @@ def data_main():
                 snapshot_start_date, sales_filter, customer_type)
 
         with mba_tab:
-            product_clusters, category_clusters, product_grouped_df, category_grouped_df, product_recommendation, category_recommendation = mba_main_function(
-                df_sales, df_lines, products, categories, snapshot_start_date,
-                snapshot_end_date, directory, sales_filter, customer_type)
+            _, _, _, invoices_, invoices_lines_, orders_, orders_lines_, _ = filter_data(
+                customer_type,
+                sales_filter,
+                snapshot_start_date,
+                snapshot_end_date,
+                directory, False, False)
+
+            if sales_filter == 'Invoice':
+                df_sales = invoices_
+                df_lines = invoices_lines_
+            else:
+                df_sales = orders_
+                df_lines = orders_lines_
+
+            product_clusters, category_clusters, product_grouped_df, category_grouped_df, \
+            product_recommendation, category_recommendation, recommendations_ubcf, recommendations_ubcfc, \
+            recommendations_ibcf, recommendations_ibcfc = mba_main_function(
+                df_sales, df_lines, products, categories, customers, directory, sales_filter, customer_type)
 
         with customer_tab:
             overview_data = pd.merge(rfm, product_clusters.reset_index()[['Customer_ID', 'Cluster MBA']],
@@ -104,8 +121,9 @@ def data_main():
 
             overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
                                    product_grouped_df, category_grouped_df, product_recommendation,
-                                   category_recommendation, directory, snapshot_start_date, snapshot_end_date, True,
-                                   sales_filter, customer_type)
+                                   category_recommendation, recommendations_ubcf, recommendations_ubcfc,
+                                   recommendations_ibcf, recommendations_ibcfc, directory, snapshot_start_date,
+                                   snapshot_end_date, True, sales_filter, customer_type)
 
     else:
         st.error('No data available for the selected time period !')
@@ -114,11 +132,12 @@ def data_main():
 
 def marketing_main():
     directory, sales_filter, customer_type, snapshot_start_date, snapshot_end_date = get_filters()
-    address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(customer_type,
-                                                                                                           sales_filter,
-                                                                                                           snapshot_start_date,
-                                                                                                           snapshot_end_date,
-                                                                                                           directory)
+    address, categories, customers, invoices, invoices_lines, orders, orders_lines, products = filter_data(
+        customer_type,
+        sales_filter,
+        snapshot_start_date,
+        snapshot_end_date,
+        directory, True, True)
     statistics_tab, overview_tab = st.tabs(['Statistics', 'Overview'])
 
     if sales_filter == 'Invoice':
@@ -133,8 +152,7 @@ def marketing_main():
             cltv_df = compute_lifetime_value(df_sales, df_lines, sales_filter)
             home_main_function(invoices, orders, customers, products, categories, cltv_df, customer_type,
                                snapshot_start_date, snapshot_end_date, directory)
-            mba_statistics_main_function(df_sales, df_lines, products, categories, snapshot_start_date,
-                                         snapshot_end_date, directory, sales_filter, customer_type)
+            mba_statistics_main_function(df_sales, df_lines, products, categories, sales_filter)
 
         with overview_tab:
             try:
@@ -162,10 +180,25 @@ def marketing_main():
                 category_recommendation = pd.read_csv(
                     './Results/' + directory + '/category_recommendation_' + sales_filter + '_' + customer_type + '_' + str(
                         snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ubcf = pd.read_csv(
+                    './Results/' + directory + '/recommendations_ubcf' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ubcfc = pd.read_csv(
+                    './Results/' + directory + '/recommendations_ubcfc' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ibcf = pd.read_csv(
+                    './Results/' + directory + '/recommendations_ibcf' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
+                recommendations_ibcfc = pd.read_csv(
+                    './Results/' + directory + '/recommendations_ibcfc' + sales_filter + '_' + customer_type + '_' + str(
+                        snapshot_start_date) + '_' + str(snapshot_end_date) + '.csv')
 
                 overview_main_function(address, overview_data, ml_clusters, segment_1_clusters, segment_2_clusters,
                                        product_grouped_df, category_grouped_df, product_recommendation,
-                                       category_recommendation, directory, snapshot_start_date, snapshot_end_date, False, sales_filter, customer_type)
+                                       category_recommendation, recommendations_ubcf, recommendations_ubcfc,
+                                       recommendations_ibcf, recommendations_ibcfc, directory, snapshot_start_date,
+                                       snapshot_end_date, False, sales_filter, customer_type)
+
             except FileNotFoundError:
                 st.error('The Data team hasn\'t sent any data yet !')
 
