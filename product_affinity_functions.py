@@ -8,6 +8,7 @@ from sklearn.metrics import silhouette_score
 from scipy.cluster.hierarchy import dendrogram, linkage
 from matplotlib import pyplot as plt
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.preprocessing import MinMaxScaler
 
 
 @st.cache_data
@@ -58,11 +59,13 @@ def show_umap(umap_2d_data, umap_3d_data, product_clusters):
 @st.cache_data
 def show_radar_plot(categorie_clusters):
     avg_df = categorie_clusters.groupby(['Cluster MBA']).mean()
+    scaler = MinMaxScaler().fit(avg_df)
+    norm_avg_df = pd.DataFrame(scaler.transform(avg_df), index=avg_df.index, columns=avg_df.columns)
     fig = go.Figure()
-    for i in range(len(avg_df)):
+    for i in range(len(norm_avg_df)):
         fig.add_trace(go.Scatterpolar(
-            r=[avg_df[j][i] for j in avg_df.columns],
-            theta=avg_df.columns,
+            r=[norm_avg_df[j][i] for j in norm_avg_df.columns],
+            theta=norm_avg_df.columns,
             fill='toself',
             name='Cluster ' + str(i)
         ))
