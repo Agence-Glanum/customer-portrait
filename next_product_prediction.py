@@ -95,10 +95,8 @@ def user_based_collaborative_filtering_for_category(products, categories, df_sal
         bought_categories_df.loc[:, 'corr'] = similarity_scores
         bought_categories_df.loc[:, 'weighted_corr'] = 0
         for bought_category in bought_categories:
-            bought_categories_df.loc[:, 'weighted_corr'] += bought_categories_df.loc[:,
-                                                            'corr'] * bought_categories_df.loc[
-                                                                      :,
-                                                                      bought_category]
+            bought_categories_df.loc[:, 'weighted_corr'] += bought_categories_df.loc[:, 'corr'] * bought_categories_df.loc[
+                                                                      :, bought_category]
 
         bought_categories_df = bought_categories_df.loc[:, 'weighted_corr'].sort_values(ascending=False)
 
@@ -133,12 +131,15 @@ def item_based_collaborative_filtering(products, df_sales, df_lines, product_nam
     df.columns = [str(col) for col in df.columns]
     normalized_df = pd.DataFrame(MinMaxScaler().fit_transform(df), columns=df.columns, index=df.index)
 
-    random_product_df = normalized_df[product_name]
-    other_products_df = normalized_df.drop([product_name], axis=1)
+    try:
+        random_product_df = normalized_df[product_name]
+        other_products_df = normalized_df.drop([product_name], axis=1)
 
-    products_similarity = other_products_df.corrwith(random_product_df).sort_values(ascending=False)
+        products_similarity = other_products_df.corrwith(random_product_df).sort_values(ascending=False)
 
-    return products_similarity[:num_recommendations]
+        return products_similarity[:num_recommendations]
+    except KeyError:
+        return {'No recommendation available': None}
 
 
 @st.cache_data
@@ -155,12 +156,15 @@ def item_based_collaborative_filtering_for_category(products, categories, df_sal
     df.columns = [str(col) for col in df.columns]
     normalized_df = pd.DataFrame(MinMaxScaler().fit_transform(df), columns=df.columns, index=df.index)
 
-    random_category_df = normalized_df[category_name]
-    other_categories_df = normalized_df.drop([category_name], axis=1)
+    try:
+        random_category_df = normalized_df[category_name]
+        other_categories_df = normalized_df.drop([category_name], axis=1)
 
-    categories_similarity = other_categories_df.corrwith(random_category_df).sort_values(ascending=False)
+        categories_similarity = other_categories_df.corrwith(random_category_df).sort_values(ascending=False)
 
-    return categories_similarity[:num_recommendations]
+        return categories_similarity[:num_recommendations]
+    except KeyError:
+        return {'No recommendation available': None}
 
 
 def get_all_recommendations(customers, products, categories, df_sales, df_lines):
@@ -168,7 +172,7 @@ def get_all_recommendations(customers, products, categories, df_sales, df_lines)
     for customer_id in customers['Customer_ID']:
         ubcf_df[customer_id] = user_based_collaborative_filtering(products, df_sales, df_lines, customer_id)
     recommendations_ubcf = pd.DataFrame(index=ubcf_df.keys(),
-                                        columns=['Recommendation 1', 'Recommendation 2', 'Recommendation 3'])
+                                        columns=['Customer_name', 'Recommendation 1', 'Recommendation 2', 'Recommendation 3'])
     for customer in ubcf_df.keys():
         keys = list(ubcf_df[customer].keys())
         for i in range(3):
@@ -221,7 +225,7 @@ def get_all_recommendations(customers, products, categories, df_sales, df_lines)
                 recommendations_ibcfc.loc[product, 'Recommendation ' + str(i + 1)] = keys[i]
             except IndexError:
                 recommendations_ibcfc.loc[product, 'Recommendation ' + str(i + 1)] = None
-    recommendations_ibcfc.index.name = 'Products'
+    recommendations_ibcfc.index.name = 'Categories'
 
     return recommendations_ubcf, recommendations_ubcfc, recommendations_ibcf, recommendations_ibcfc
 
@@ -241,8 +245,8 @@ def next_prod_pred_main_function(apriori_rules_products, apriori_rules_categorie
 
     st.subheader('Collaborative Filtering - Customer based')
     customer_id = st.selectbox('Customers',
-                               (customers['Customer_ID'].astype(str) + ' - ' + customers['Customer_name']))
-    customer_id = int(customer_id.split(' - ')[0])
+                               (customers['Customer_ID'].astype(str) + ' -- ' + customers['Customer_name']))
+    customer_id = int(customer_id.split(' -- ')[0])
 
     st.caption('Recommended products')
     recommended_products = user_based_collaborative_filtering(products, df_sales, df_lines, customer_id)
@@ -259,16 +263,16 @@ def next_prod_pred_main_function(apriori_rules_products, apriori_rules_categorie
 
     st.subheader('Collaborative Filtering - Item based')
     product = st.selectbox('Products',
-                           (products['Product_ID'].astype(str) + ' - ' + products['Product_name']))
-    product_name = product.split(' - ')[1]
+                           (products['Product_ID'].astype(str) + ' -- ' + products['Product_name']))
+    product_name = product.split(' -- ')[1]
     st.caption('Recommended products')
     recommended_products = item_based_collaborative_filtering(products, df_sales, df_lines, product_name)
     for product, score in recommended_products.items():
         st.markdown(f"- {product}")
 
     category = st.selectbox('Categories',
-                            (categories['Category_ID'].astype(str) + ' - ' + categories['Category_name']))
-    category_name = category.split(' - ')[1]
+                            (categories['Category_ID'].astype(str) + ' -- ' + categories['Category_name']))
+    category_name = category.split(' -- ')[1]
     st.caption('Recommended categories')
     recommended_categories = item_based_collaborative_filtering_for_category(products, categories, df_sales, df_lines,
                                                                              category_name)
