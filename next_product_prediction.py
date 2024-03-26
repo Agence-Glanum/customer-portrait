@@ -172,7 +172,7 @@ def get_all_recommendations(customers, products, categories, df_sales, df_lines)
     for customer_id in customers['Customer_ID']:
         ubcf_df[customer_id] = user_based_collaborative_filtering(products, df_sales, df_lines, customer_id)
     recommendations_ubcf = pd.DataFrame(index=ubcf_df.keys(),
-                                        columns=['Customer_name', 'Recommendation 1', 'Recommendation 2', 'Recommendation 3'])
+                                        columns=['Recommendation 1', 'Recommendation 2', 'Recommendation 3'])
     for customer in ubcf_df.keys():
         keys = list(ubcf_df[customer].keys())
         for i in range(3):
